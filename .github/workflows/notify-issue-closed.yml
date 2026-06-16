@@ -1,0 +1,24 @@
+name: Notify Issue Closed
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          CLOSED_BY: ${{ github.actor }}
+        run: |
+          jq -n \
+            --arg content "✅ **#${ISSUE_NUMBER} ${ISSUE_TITLE}** がクローズされました（by ${CLOSED_BY}）\n${ISSUE_URL}" \
+            '{"content": $content}' \
+          | curl -s -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d @-
