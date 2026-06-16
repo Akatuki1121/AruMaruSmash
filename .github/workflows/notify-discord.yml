@@ -1,0 +1,43 @@
+name: Discord Mention Notification
+
+on:
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Mention
+        uses: actions/github-script@v7
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const config = JSON.parse(process.env.DISCORD_CONFIG);
+            const assignees = issue.assignees.map(a => a.login);
+            const labels = issue.labels.map(l => l.name);
+
+            let mentions = assignees
+              .map(login => config.users[login])
+              .filter(Boolean)
+              .map(id => `<@${id}>`);
+
+            if (mentions.length === 0) {
+              mentions = labels
+                .map(label => config.roles[label.toLowerCase()])
+                .filter(Boolean)
+                .map(id => `<@&${id}>`);
+            }
+
+            if (mentions.length === 0) return;
+
+            await fetch(process.env.DISCORD_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: `${mentions.join(' ')} 新しいタスクがアサインされました！\n📌 **${issue.title}**\n🔗 ${issue.html_url}`
+              })
+            });
