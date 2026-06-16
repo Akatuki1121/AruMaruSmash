@@ -2,7 +2,7 @@ name: Discord Mention Notification
 
 on:
   issues:
-    types: [opened, assigned]
+    types: [assigned]
 
 jobs:
   notify:
@@ -20,16 +20,46 @@ jobs:
             const assignees = issue.assignees.map(a => a.login);
             const labels = issue.labels.map(l => l.name);
 
-            let mentions = assignees
-              .map(login => config.users[login])
-              .filter(Boolean)
-              .map(id => `<@${id}>`);
+            let mentions = [];
 
-            if (mentions.length === 0) {
+            if (assignees.length === 0 && labels.length === 0) return;
+
+            // Assigneeなし・ラベルあり → ロールのみ
+            if (assignees.length === 0) {
               mentions = labels
                 .map(label => config.roles[label.toLowerCase()])
                 .filter(Boolean)
                 .map(id => `<@&${id}>`);
+
+            // Assigneeあり・ラベルなし → 個人のみ
+            } else if (labels.length === 0) {
+              mentions = assignees
+                .map(login => config.users[login]?.discordId)
+                .filter(Boolean)
+                .map(id => `<@${id}>`);
+
+            // Assigneeあり・ラベルあり
+            } else {
+              for (const label of labels) {
+                const assigneeRoles = assignees.map(login => config.users[login]?.role);
+
+                // 同分野 → ロールのみ
+                if (assigneeRoles.includes(label.toLowerCase())) {
+                  const roleId = config.roles[label.toLowerCase()];
+                  if (roleId) mentions.push(`<@&${roleId}>`);
+
+                // 別分野 → 個人 + ロール
+                } else {
+                  assignees.forEach(login => {
+                    const id = config.users[login]?.discordId;
+                    if (id) mentions.push(`<@${id}>`);
+                  });
+                  const roleId = config.roles[label.toLowerCase()];
+                  if (roleId) mentions.push(`<@&${roleId}>`);
+                }
+              }
+              // 重複除去
+              mentions = [...new Set(mentions)];
             }
 
             if (mentions.length === 0) return;
