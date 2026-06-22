@@ -11,6 +11,19 @@ public class MoveManager : InputManager
     void Update()
     {
         GetMoveDirection();
+        if (!GetInputRight() && !GetInputLeft() && !GetInputUp() && !GetInputDown())
+        {
+            // 慣性で移動する場合の減速処理
+            moveDirection -= moveDirection * Time.deltaTime * 1f;
+
+            // 移動方向がほぼゼロになったら完全に停止させる
+            if (moveDirection.sqrMagnitude < 0.001f)
+            {
+                moveDirection = Vector3.zero;
+            }
+        }
+
+
     }
 
     private void FixedUpdate()
@@ -38,7 +51,7 @@ public class MoveManager : InputManager
         }
         else
         {
-            moveDirection = Vector3.zero; // 慣性をリセット
+            //moveDirection = Vector3.zero; // 慣性をリセット
         }
     }
 
@@ -47,14 +60,14 @@ public class MoveManager : InputManager
     {
         if (moveDirection.sqrMagnitude > 0)
         {
-            rb.linearVelocity = Vector3.zero; // 慣性をリセット
+            //rb.linearVelocity = Vector3.zero; // 慣性をリセット
 
             Vector3 nextPosition = rb.position + moveDirection * speed * Time.deltaTime;
             rb.MovePosition(nextPosition);
         }
         else
         {
-            rb.linearVelocity = Vector3.zero; // 慣性をリセット
+           // rb.linearVelocity = Vector3.zero; // 慣性をリセット
         }
     }
 }
