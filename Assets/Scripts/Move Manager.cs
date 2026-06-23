@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class MoveManager : InputManager
 {
@@ -62,7 +61,7 @@ public class MoveManager : InputManager
         {
             //rb.linearVelocity = Vector3.zero; // 慣性をリセット
 
-            Vector3 nextPosition = rb.position + moveDirection * speed * Time.deltaTime;
+            Vector3 nextPosition = rb.position + (moveDirection * speed * Time.deltaTime);
             rb.MovePosition(nextPosition);
         }
         else
