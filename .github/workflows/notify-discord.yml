@@ -2,7 +2,11 @@ name: Discord Mention Notification
 
 on:
   issues:
-    types: [assigned]
+    types: [opened, assigned, labeled]
+
+concurrency:
+  group: notify-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
 
 jobs:
   notify:
@@ -22,13 +26,12 @@ jobs:
             const labels = issue.labels.map(l => l.name.toLowerCase());
 
             if (assignees.length === 0 && labels.length === 0) {
-              core.info('No assignees or labels, skipping notification.');
+              core.info('担当者・ラベルともになし。通知をスキップします。');
               return;
             }
 
             const mentionSet = new Set();
 
-            // 1. 担当者メンション（GitHubユーザー → Discordユーザー）
             for (const login of assignees) {
               const user = config.users[login];
               if (user?.discordId) {
@@ -36,7 +39,6 @@ jobs:
               }
             }
 
-            // 2. ラベルに対応するロールメンション
             for (const label of labels) {
               const roleId = config.roles[label];
               if (roleId) {
@@ -44,25 +46,10 @@ jobs:
               }
             }
 
-            // 3. ラベルと担当者ロールの紐付け（必要なら）
-            //   config.users[login].role と label が一致する場合だけ、そのロールをメンション
-            for (const login of assignees) {
-              const user = config.users[login];
-              if (!user?.role) continue;
-
-              const normalizedRole = user.role.toLowerCase();
-              if (labels.includes(normalizedRole)) {
-                const roleId = config.roles[normalizedRole];
-                if (roleId) {
-                  mentionSet.add(`<@&${roleId}>`);
-                }
-              }
-            }
-
             const mentions = [...mentionSet];
 
             if (mentions.length === 0) {
-              core.info('No valid Discord mentions resolved, skipping notification.');
+              core.info('メンション対象なし。通知をスキップします。');
               return;
             }
 
