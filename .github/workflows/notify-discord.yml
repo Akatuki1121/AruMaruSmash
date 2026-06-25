@@ -2,7 +2,11 @@ name: Discord Mention Notification
 
 on:
   issues:
-    types: [assigned]
+    types: [opened, assigned, labeled]
+
+concurrency:
+  group: notify-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
 
 jobs:
   notify:
@@ -17,57 +21,44 @@ jobs:
           script: |
             const issue = context.payload.issue;
             const config = JSON.parse(process.env.DISCORD_CONFIG);
+
             const assignees = issue.assignees.map(a => a.login);
-            const labels = issue.labels.map(l => l.name);
+            const labels = issue.labels.map(l => l.name.toLowerCase());
 
-            let mentions = [];
-
-            if (assignees.length === 0 && labels.length === 0) return;
-
-            // Assigneeなし・ラベルあり → ロールのみ
-            if (assignees.length === 0) {
-              mentions = labels
-                .map(label => config.roles[label.toLowerCase()])
-                .filter(Boolean)
-                .map(id => `<@&${id}>`);
-
-            // Assigneeあり・ラベルなし → 個人のみ
-            } else if (labels.length === 0) {
-              mentions = assignees
-                .map(login => config.users[login]?.discordId)
-                .filter(Boolean)
-                .map(id => `<@${id}>`);
-
-            // Assigneeあり・ラベルあり
-            } else {
-              for (const label of labels) {
-                const assigneeRoles = assignees.map(login => config.users[login]?.role);
-
-                // 同分野 → ロールのみ
-                if (assigneeRoles.includes(label.toLowerCase())) {
-                  const roleId = config.roles[label.toLowerCase()];
-                  if (roleId) mentions.push(`<@&${roleId}>`);
-
-                // 別分野 → 個人 + ロール
-                } else {
-                  assignees.forEach(login => {
-                    const id = config.users[login]?.discordId;
-                    if (id) mentions.push(`<@${id}>`);
-                  });
-                  const roleId = config.roles[label.toLowerCase()];
-                  if (roleId) mentions.push(`<@&${roleId}>`);
-                }
-              }
-              // 重複除去
-              mentions = [...new Set(mentions)];
+            if (assignees.length === 0 && labels.length === 0) {
+              core.info('担当者・ラベルともになし。通知をスキップします。');
+              return;
             }
 
-            if (mentions.length === 0) return;
+            const mentionSet = new Set();
+
+            for (const login of assignees) {
+              const user = config.users[login];
+              if (user?.discordId) {
+                mentionSet.add(`<@${user.discordId}>`);
+              }
+            }
+
+            for (const label of labels) {
+              const roleId = config.roles[label];
+              if (roleId) {
+                mentionSet.add(`<@&${roleId}>`);
+              }
+            }
+
+            const mentions = [...mentionSet];
+
+            if (mentions.length === 0) {
+              core.info('メンション対象なし。通知をスキップします。');
+              return;
+            }
+
+            const content = `${mentions.join(' ')} 新しいタスクがアサインされました！\n` +
+                            `📌 **${issue.title}**\n` +
+                            `🔗 ${issue.html_url}`;
 
             await fetch(process.env.DISCORD_WEBHOOK_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content: `${mentions.join(' ')} 新しいタスクがアサインされました！\n📌 **${issue.title}**\n🔗 ${issue.html_url}`
-              })
+              body: JSON.stringify({ content })
             });
