@@ -381,6 +381,8 @@ public class Joycon
 			}
         }
     }
+
+    // ボタン＆スティックの状態を処理する関数
     private int ProcessButtonsAndStick(byte[] report_buf)
     {
         if (report_buf[0] == 0x00) return -1;
@@ -427,6 +429,8 @@ public class Joycon
         }
         return 0;
     }
+
+    // ジャイロと加速度の値を抽出する関数
     private void ExtractIMUValues(byte[] report_buf, int n = 0)
     {
         gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
