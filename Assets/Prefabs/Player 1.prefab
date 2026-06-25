@@ -15,6 +15,11 @@ GameObject:
   - component: {fileID: 8492557694882261568}
   - component: {fileID: 906191843357125834}
   - component: {fileID: 2966165088612859883}
+  - component: {fileID: 3696463139165533619}
+  - component: {fileID: 5851547271565043925}
+  - component: {fileID: 5538191237084580691}
+  - component: {fileID: 4626820877390978900}
+  - component: {fileID: 6894154056110045840}
   m_Layer: 0
   m_Name: Player 1
   m_TagString: Untagged
@@ -137,7 +142,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -183,7 +188,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9048779203388553079}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc8403cbaef9be64b8c345d55f506007, type: 3}
   m_Name: 
@@ -191,3 +196,92 @@ MonoBehaviour:
   deadzone: 0.3
   rb: {fileID: 0}
   speed: 5
+--- !u!114 &3696463139165533619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9048779203388553079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bb7be3969f38294d8e3c68017c7881e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoveManager_Test
+  deadzone: 0.3
+  rb: {fileID: 0}
+  speed: 5
+  turnSpeedSame: 720
+  turnSpeedReverse: 90
+  turnSpeedCurve: 2
+  reverseTurnSpeedMultiplierMin: 0.3
+  knockbackController: {fileID: 6894154056110045840}
+--- !u!114 &5851547271565043925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9048779203388553079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 801130ea9660f2a4f845b1bf1e57645b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AccelTiltTest
+  baseSpeed: 5
+  qRiseDuration: 1.5
+  eJumpAmount: 1
+  decayDuration: 1
+  reverseDotThreshold: -0.1
+  brakeDuration: 0.15
+  accelMultiplier: 1
+  showDebugLog: 0
+  tiltAmount: 0
+--- !u!114 &5538191237084580691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9048779203388553079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
+  groundTag: Ground
+--- !u!114 &4626820877390978900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9048779203388553079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
+  asymmetryFactor: 0.85
+  bounceForceMultiplier: 1
+  upwardForcePerSpeed: 0.6
+  minUpwardForce: 1.5
+  maxUpwardForce: 8
+  sameTargetCooldown: 1.5
+--- !u!114 &6894154056110045840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9048779203388553079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c5e6e6e65cff7140ac38130e3bd8ff9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
+  groundChecker: {fileID: 5538191237084580691}
+  knockbackLockDuration: 1.2
+  airControlMultiplier: 0.1
+  airControlKnockbackThreshold: 0.9
+  knockbackDecaySpeed: 4

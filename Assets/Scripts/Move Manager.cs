@@ -3,7 +3,7 @@
 public class MoveManager : InputManager
 {
     [Header("速度")]
-    public float speed = 5f;
+    public float speed = 3f;
 
     private Vector3 moveDirection = Vector3.zero;
 
@@ -61,7 +61,7 @@ public class MoveManager : InputManager
         {
             //rb.linearVelocity = Vector3.zero; // 慣性をリセット
 
-            Vector3 nextPosition = rb.position + (moveDirection * speed * Time.deltaTime);
+            Vector3 nextPosition = rb.position + (speed * Time.deltaTime * moveDirection);
             rb.MovePosition(nextPosition);
         }
         else
