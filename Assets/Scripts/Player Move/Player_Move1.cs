@@ -17,7 +17,7 @@ public class Player_Move1 : MonoBehaviour
     
 
     [Header("速度")]
-    float maxSpeed = 100f;  // 最大速度
+    float maxSpeed = 50f;  // 最大速度
     float acceleration = 5f;    // 加速度
     public float currentSpeed = 0f; // 現在の速度
     float brakeSpeed = 20f; // 減速速度
