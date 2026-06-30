@@ -25,7 +25,7 @@ public class MoveManager_Test : InputManager_Test
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
 
     [Header("速度")]
-    public float speed = 3f;
+    public float speed = 5f;
 
     [Header("方向転換（切り返し）の抵抗")]
     [Tooltip("同方向〜やや角度のある入力に対する追従の速さ（度/秒）。大きいほど素早く向きを変える")]
@@ -49,7 +49,7 @@ public class MoveManager_Test : InputManager_Test
 
     protected override void Awake()
     {
-        base.Awake(); // InputManager_Test.Awake()でrbを初期化する
+        base.Awake(); // InputManager_JoyconTest.Awake()でrbを初期化する
 
         if (knockbackController == null)
         {
@@ -57,8 +57,10 @@ public class MoveManager_Test : InputManager_Test
         }
     }
 
-    void Update()
+    protected override void Update()
     {
+        base.Update(); // InputManager_JoyconTest.Update()でJoy-Conスティックのポーリング・入力選択を行う
+
         GetMoveDirection();
         if (!GetInputRight() && !GetInputLeft() && !GetInputUp() && !GetInputDown())
         {
