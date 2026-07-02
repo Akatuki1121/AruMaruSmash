@@ -219,6 +219,10 @@ PrefabInstance:
       propertyPath: upwardForcePerSpeed
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 8492557694882261568, guid: 450cefa3ba442074aa99c3a298fb24b3, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9048779203388553079, guid: 450cefa3ba442074aa99c3a298fb24b3, type: 3}
       propertyPath: m_Name
       value: Player 1
@@ -465,6 +469,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8047691763889309843, guid: 9b44c38024e9fc64d9fbc09a66aeeb0f, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8623368044863564572, guid: 9b44c38024e9fc64d9fbc09a66aeeb0f, type: 3}
       propertyPath: m_Name
       value: Player 2
@@ -705,10 +713,20 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Ground
       objectReference: {fileID: 0}
+    - target: {fileID: 7750397243111347764, guid: fc323e5661878954f9513399a5be89c3, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fc323e5661878954f9513399a5be89c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2133142476}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fc323e5661878954f9513399a5be89c3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2133142473}
     - targetCorrespondingSourceObject: {fileID: 7750397243111347764, guid: fc323e5661878954f9513399a5be89c3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1157744840}
@@ -1412,6 +1430,56 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8632993429437876281, guid: fc323e5661878954f9513399a5be89c3, type: 3}
+--- !u!1 &2133142472 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fc323e5661878954f9513399a5be89c3, type: 3}
+  m_PrefabInstance: {fileID: 1157744813}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &2133142473
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2133142472}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 3
+--- !u!114 &2133142476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2133142472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9830d50bfbddba43849127943d2a829, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TiltStageWithCollision
+  tiltSensitivity: 0.3
+  maxTiltAngle: 10
+  stabilizationSpeed: 10
+  exitGraceFrames: 3
+  positionSmoothing: 0.3
+  torqueSmoothSpeed: 8
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
