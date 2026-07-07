@@ -1,9 +1,7 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-
 using UnityEngine;
-using System;
 public class JoyconManager: MonoBehaviour
 {
 
@@ -42,7 +40,7 @@ public class JoyconManager: MonoBehaviour
 		{
 			ptr = HIDapi.hid_enumerate(vendor_id_, 0x0);
 			if (ptr == IntPtr.Zero)
-			{ 
+			{
 				HIDapi.hid_free_enumeration(ptr);
 				Debug.Log ("No Joy-Cons found!");
 			}
