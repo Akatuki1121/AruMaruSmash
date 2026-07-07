@@ -892,10 +892,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 885649622215985095, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
-      propertyPath: m_UseGravity
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1017920493824726076, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_Name
       value: TPS Test Player A
