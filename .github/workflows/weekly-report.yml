@@ -1,0 +1,229 @@
+name: Weekly Report Draft
+
+on:
+  schedule:
+    # 毎週火曜 11:00 JST = 火曜 02:00 UTC
+    - cron: '0 2 * * 2'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate weekly report drafts
+        id: gen
+        uses: actions/github-script@v7
+        env:
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const config = JSON.parse(process.env.DISCORD_CONFIG);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // GitHubログイン名 -> 学籍番号・氏名の対応表
+            const memberInfo = {
+              'Akatuki1121': { studentId: '2327004', name: '石田蒼太' },
+              'kuroda-R':    { studentId: '2427030', name: '黒田龍成' },
+              'rinvivi':     { studentId: '2427026', name: '川口りんね' },
+              'Hisu1031':    { studentId: '2427001', name: '会場翔' },
+              'yabamao747':  { studentId: '2427051', name: '張梓恵' },
+              'yano5555':    { studentId: '2427075', name: '矢野朱華' },
+            };
+
+            // 対象週: 直近の火曜11:00 JSTから遡って7日間
+            const now = new Date();
+            const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const sinceISO = since.toISOString();
+            const untilISO = now.toISOString();
+
+            function fmtDate(d) {
+              return d.toISOString().slice(0, 10);
+            }
+
+            // 全メンバー（memberInfo のキー = GitHubログイン名）
+            const logins = Object.keys(memberInfo);
+
+            // コミット取得（デフォルトブランチ、author別に集計）
+            const commitsByAuthor = {};
+            for (const login of logins) commitsByAuthor[login] = [];
+
+            let page = 1;
+            while (true) {
+              const { data: commits } = await github.rest.repos.listCommits({
+                owner, repo,
+                since: sinceISO,
+                until: untilISO,
+                per_page: 100,
+                page,
+              });
+              if (commits.length === 0) break;
+              for (const c of commits) {
+                const login = c.author?.login;
+                const message = c.commit.message.split('\n')[0];
+                const date = c.commit.author?.date?.slice(0, 10) || '';
+                if (login && commitsByAuthor[login]) {
+                  commitsByAuthor[login].push(`[${date}] ${message}`);
+                } else if (login) {
+                  // config未登録ユーザーのコミットも念のため拾う
+                  commitsByAuthor[login] = commitsByAuthor[login] || [];
+                  commitsByAuthor[login].push(`[${date}] ${message}`);
+                }
+              }
+              if (commits.length < 100) break;
+              page++;
+            }
+
+            // Issue / PR 取得（作成・クローズ・アサインされたもの）
+            const issueEventsByUser = {};
+            for (const login of logins) issueEventsByUser[login] = [];
+
+            const { data: issuesAndPRs } = await github.rest.issues.listForRepo({
+              owner, repo,
+              state: 'all',
+              since: sinceISO,
+              per_page: 100,
+            });
+
+            for (const item of issuesAndPRs) {
+              const isPR = !!item.pull_request;
+              const kind = isPR ? 'PR' : 'Issue';
+              const created = new Date(item.created_at);
+              const closed = item.closed_at ? new Date(item.closed_at) : null;
+
+              // 今週作成されたもの → 作成者に記録
+              if (created >= since && created <= now) {
+                const login = item.user?.login;
+                if (login && issueEventsByUser[login]) {
+                  issueEventsByUser[login].push(`${kind}作成: #${item.number} ${item.title}`);
+                }
+              }
+              // 今週クローズされたもの → assignee全員に記録
+              if (closed && closed >= since && closed <= now) {
+                const assignees = (item.assignees || []).map(a => a.login);
+                for (const a of assignees) {
+                  if (issueEventsByUser[a]) {
+                    issueEventsByUser[a].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                  }
+                }
+                if (assignees.length === 0 && item.user?.login && issueEventsByUser[item.user.login]) {
+                  issueEventsByUser[item.user.login].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                }
+              }
+            }
+
+            // 出力ディレクトリ
+            const outDir = 'weekly-reports/draft';
+            fs.mkdirSync(outDir, { recursive: true });
+
+            const weekLabel = `${fmtDate(since)}〜${fmtDate(now)}`;
+            const generatedFiles = [];
+
+            for (const login of logins) {
+              const commits = commitsByAuthor[login] || [];
+              const events = issueEventsByUser[login] || [];
+              const info = memberInfo[login] || { studentId: '', name: '' };
+
+              const lines = [];
+              lines.push(`学籍番号：${info.studentId}`);
+              lines.push(`名前：${info.name}`);
+              lines.push('');
+              lines.push(`【対象週】${weekLabel}`);
+              lines.push('');
+              lines.push('■ 今週の作業内容（自動集計・要編集）');
+              if (commits.length > 0) {
+                lines.push('・コミット:');
+                for (const c of commits) lines.push(`  - ${c}`);
+              }
+              if (events.length > 0) {
+                lines.push('・Issue/PR:');
+                for (const e of events) lines.push(`  - ${e}`);
+              }
+              if (commits.length === 0 && events.length === 0) {
+                lines.push('（この週はGitHub上の記録なし。作業した場合は下記に追記してください）');
+              }
+              lines.push('');
+              lines.push('■ 進捗・成果（ここに人間が加筆してください）');
+              lines.push('');
+              lines.push('■ 備考（欠席の場合は「演習当日は欠席」と明記）');
+              lines.push('');
+
+              const content = lines.join('\n');
+              const filePath = path.join(outDir, `${login}.txt`);
+              fs.writeFileSync(filePath, content, 'utf8');
+              generatedFiles.push({ login, filePath });
+            }
+
+            fs.writeFileSync(
+              path.join(outDir, '_generated_files.json'),
+              JSON.stringify(generatedFiles),
+              'utf8'
+            );
+
+            core.setOutput('weekLabel', weekLabel);
+
+      - name: Commit drafts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add weekly-reports/draft
+          git diff --cached --quiet || git commit -m "週報下書き自動生成 (${{ steps.gen.outputs.weekLabel }})"
+          git push
+
+      - name: Notify each member on Discord with their draft attached
+        uses: actions/github-script@v7
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
+          DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const config = JSON.parse(process.env.DISCORD_CONFIG);
+            const outDir = 'weekly-reports/draft';
+            const listPath = path.join(outDir, '_generated_files.json');
+
+            if (!fs.existsSync(listPath)) {
+              core.info('生成ファイルなし。通知をスキップします。');
+              return;
+            }
+
+            const files = JSON.parse(fs.readFileSync(listPath, 'utf8'));
+
+            for (const { login, filePath } of files) {
+              const user = config.users[login];
+              if (!user?.discordId) {
+                core.info(`${login} のDiscordIDが設定されていないためスキップ`);
+                continue;
+              }
+
+              const form = new FormData();
+              const content = `<@${user.discordId}> 今週の週報下書きができました。中身を確認・編集して提出してください。`;
+              form.append('payload_json', JSON.stringify({ content }));
+              form.append(
+                'files[0]',
+                new Blob([fs.readFileSync(filePath)], { type: 'text/plain' }),
+                path.basename(filePath)
+              );
+
+              const res = await fetch(process.env.DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                body: form,
+              });
+
+              if (!res.ok) {
+                core.warning(`${login} への通知に失敗: ${res.status} ${await res.text()}`);
+              }
+            }
