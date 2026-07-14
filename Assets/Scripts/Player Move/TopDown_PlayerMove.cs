@@ -149,7 +149,6 @@ public class TopDown_PlayerMove : MonoBehaviour
         float moveX = 0;
         float moveZ = 0;
 
-        // 【提示されたコード通りの軸割り当て】
         // ジョイコンの前後傾き（Y）で、画面の上下（Z軸）を移動
         if (GetTiltY() > 0.2f) moveZ -= 1f;
         if (GetTiltY() < -0.2f) moveZ += 1f;

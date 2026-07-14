@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 425476975340054947}
   - component: {fileID: 240506125649400888}
   - component: {fileID: -59254865763309353}
+  - component: {fileID: 9051538524837917794}
   - component: {fileID: 3475925092893647318}
   - component: {fileID: 1977582851436274573}
   m_Layer: 0
@@ -142,6 +143,30 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &9051538524837917794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890238701697212746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f04af9860e414c448b4a93c918f3c6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
+  JoyAccel: {x: 0, y: 0, z: 0}
+  maxSpeed: 20
+  currentSpeed: 0
+  brakeSpeed: 8
+  acceleration: 3
+  rb: {fileID: -59254865763309353}
+  tiltAmount: 0
+  dashAmount: 1
+  dashDuration: 1
+  dashSpeedMultiplier: 1
+  dashTiltAmount: 0
+  joyconIndex: 1
 --- !u!114 &3475925092893647318
 MonoBehaviour:
   m_ObjectHideFlags: 0
