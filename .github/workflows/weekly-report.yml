@@ -142,7 +142,7 @@ jobs:
               lines.push('');
               lines.push(`【対象週】${weekLabel}`);
               lines.push('');
-              lines.push('■ 今週の作業内容（自動集計・要編集）');
+              lines.push('■ 今週の作業内容');
               if (commits.length > 0) {
                 lines.push('・コミット:');
                 for (const c of commits) lines.push(`  - ${c}`);
@@ -151,14 +151,13 @@ jobs:
                 lines.push('・Issue/PR:');
                 for (const e of events) lines.push(`  - ${e}`);
               }
-              if (commits.length === 0 && events.length === 0) {
-                lines.push('（この週はGitHub上の記録なし。作業した場合は下記に追記してください）');
-              }
+              
               lines.push('');
-              lines.push('■ 進捗・成果（ここに人間が加筆してください）');
+              lines.push('■ 進捗・成果');
               lines.push('');
-              lines.push('■ 備考（欠席の場合は「演習当日は欠席」と明記）');
+              lines.push('■ 備考');
               lines.push('');
+
 
               const content = lines.join('\n');
               const filePath = path.join(outDir, `${login}.txt`);
