@@ -151,7 +151,6 @@ jobs:
                 lines.push('・Issue/PR:');
                 for (const e of events) lines.push(`  - ${e}`);
               }
-              
               lines.push('');
               lines.push('■ 進捗・成果');
               lines.push('');
@@ -160,7 +159,8 @@ jobs:
 
 
               const content = lines.join('\n');
-              const filePath = path.join(outDir, `${login}.txt`);
+              const fileName = `${info.studentId}${info.name}.txt`;
+              const filePath = path.join(outDir, fileName);
               fs.writeFileSync(filePath, content, 'utf8');
               generatedFiles.push({ login, filePath });
             }
