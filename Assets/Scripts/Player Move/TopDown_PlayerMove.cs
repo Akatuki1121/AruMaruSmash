@@ -46,10 +46,10 @@ public class TopDown_PlayerMove : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if (JoyAccelRec == null)
-        {
-            JoyAccelRec = GetComponent<Joycon_accel_Receiver>();
-        }
+        //if (JoyAccelRec == null)
+        //{
+        //    JoyAccelRec = GetComponent<Joycon_accel_Receiver>();
+        //}
         if (rb == null)
         {
             rb = GetComponent<Rigidbody>();
@@ -62,6 +62,18 @@ public class TopDown_PlayerMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (JoyconManager.Instance != null && JoyconManager.Instance.j != null)
+        {
+            // 接続されているジョイコンの数を画面上に常時出す
+            Debug.Log($"現在Unityが認識しているジョイコンの数: {JoyconManager.Instance.j.Count}台");
+
+            for (int i = 0; i < JoyconManager.Instance.j.Count; i++)
+            {
+                var j = JoyconManager.Instance.j[i];
+                Debug.Log($"Index [{i}]: {(j.isLeft ? "L(左)" : "R(右)")} - 接続状態: {j.state}");
+            }
+        }
+
         Vector3 oldDir = moveDirection;
 
         GetMoveDirection();
@@ -146,16 +158,29 @@ public class TopDown_PlayerMove : MonoBehaviour
 
     public void GetMoveDirection()
     {
+        if (joycon == null)
+        {
+            JoyAccel = Vector3.zero;
+            tiltAmount = 0f;
+            moveDirection = Vector3.zero;
+            return;
+        }
+
+        JoyAccel = joycon.GetAccel();
+
+        // 以下のログを追加して、どっちのプレイヤーがどの値を検知しているか確認
+        Debug.Log($"{gameObject.name} (Index:{joyconIndex}) のAccel: {JoyAccel}");
+
         float moveX = 0;
         float moveZ = 0;
 
         // ジョイコンの前後傾き（Y）で、画面の上下（Z軸）を移動
-        if (GetTiltY() > 0.2f) moveZ -= 1f;
-        if (GetTiltY() < -0.2f) moveZ += 1f;
+        if (JoyAccel.y > 0.2f) moveZ -= 1f;
+        if (JoyAccel.y < -0.2f) moveZ += 1f;
 
         // ジョイコンの左右傾き（X）で、画面の左右（X軸）を移動
-        if (GetTiltX() > 0.2f) moveX += 1f;
-        if (GetTiltX() < -0.2f) moveX -= 1f;
+        if (JoyAccel.x > 0.2f) moveX += 1f;
+        if (JoyAccel.x < -0.2f) moveX -= 1f;
 
         Vector3 inputVector = new Vector3(moveX, 0f, moveZ);
 
@@ -167,7 +192,7 @@ public class TopDown_PlayerMove : MonoBehaviour
             moveDirection = inputVector.normalized;
 
             // 傾き量を計算するために、X軸とY軸の傾きの絶対値の最大値を使用
-            float rawTilt = Mathf.Max(Mathf.Abs(GetTiltX()), Mathf.Abs(GetTiltY()));
+            float rawTilt = Mathf.Max(Mathf.Abs(JoyAccel.x), Mathf.Abs(JoyAccel.y));
             float normalizedTilt = (rawTilt - 0.2f) / (1f - 0.2f); // 0.2〜1の範囲を0〜1に正規化
             tiltAmount = Mathf.Clamp01(normalizedTilt);
         }
@@ -177,7 +202,7 @@ public class TopDown_PlayerMove : MonoBehaviour
             tiltAmount = 0f;
         }
     }
-
+    
     private void TryAcquireJoyCon()
     {
         if(joycon != null) return; // すでにJoy-Conを取得済み
@@ -186,19 +211,17 @@ public class TopDown_PlayerMove : MonoBehaviour
         if(joyconIndex < 0 || joyconIndex >= JoyconManager.Instance.j.Count) return; // インデックスが範囲外の場合は何もしない
 
         joycon = JoyconManager.Instance.j[joyconIndex];
+
+        Debug.Log($"<color=yellow>【デバッグ】Playerオブジェクト {gameObject.name} が Index {joyconIndex} のジョイコンを取得しました！ (L/R: {(joycon.isLeft ? "L" : "R")})</color>");
     }
 
     public float GetTiltX()
     {
-        if (JoyAccelRec == null) return 0f;
-        JoyAccel = JoyAccelRec.GetAccel();
         return JoyAccel.x;
     }
 
     public float GetTiltY()
     {
-        if (JoyAccelRec == null) return 0f;
-        JoyAccel = JoyAccelRec.GetAccel();
         return JoyAccel.y;
     }
 
@@ -210,7 +233,7 @@ public class TopDown_PlayerMove : MonoBehaviour
 
     public void HandleDashInput()
     {
-        TryAcquireJoyCon();
+        //TryAcquireJoyCon();
 
         bool isDashButtonDown = false;
         bool isDashButtonHeld = false;

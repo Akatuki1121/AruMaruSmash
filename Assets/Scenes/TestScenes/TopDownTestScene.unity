@@ -461,7 +461,7 @@ Transform:
   m_GameObject: {fileID: 968305973}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
-  m_LocalPosition: {x: 0, y: 13.82, z: -11.3}
+  m_LocalPosition: {x: 0, y: 28, z: -25.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1221,10 +1221,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: TD Test Player B
       objectReference: {fileID: 0}
-    - target: {fileID: 890238701697212746, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.66691
@@ -1325,6 +1321,10 @@ PrefabInstance:
     - target: {fileID: 1017920493824726076, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_Name
       value: TD Test Player A
+      objectReference: {fileID: 0}
+    - target: {fileID: 1017920493824726076, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalPosition.x
