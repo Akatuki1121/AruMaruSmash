@@ -6,8 +6,12 @@ on:
     - cron: '0 2 * * 2'
   workflow_dispatch: {}
 
+concurrency:
+  group: weekly-report
+  cancel-in-progress: false
+
 permissions:
-  contents: write
+  contents: read
   issues: read
   pull-requests: read
 
@@ -15,9 +19,6 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Generate weekly report drafts
         id: gen
         uses: actions/github-script@v7
@@ -172,14 +173,6 @@ jobs:
             );
 
             core.setOutput('weekLabel', weekLabel);
-
-      - name: Commit drafts
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add weekly-reports/draft
-          git diff --cached --quiet || git commit -m "週報下書き自動生成 (${{ steps.gen.outputs.weekLabel }})"
-          git push
 
       - name: Notify each member on Discord with their draft attached
         uses: actions/github-script@v7
