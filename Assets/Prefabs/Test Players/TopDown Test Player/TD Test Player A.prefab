@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 6118032339298840857}
   - component: {fileID: 885649622215985095}
   - component: {fileID: 8462564121325967356}
-  - component: {fileID: 1460343876716881903}
   - component: {fileID: 1706680311520195614}
   m_Layer: 0
   m_Name: TD Test Player A
@@ -22,7 +21,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5397790295217848279
 Transform:
   m_ObjectHideFlags: 0
@@ -167,20 +166,6 @@ MonoBehaviour:
   dashSpeedMultiplier: 1
   dashTiltAmount: 0
   joyconIndex: 0
---- !u!114 &1460343876716881903
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1017920493824726076}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59114ecfa63bce2448b7c741e34d7d57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Joycon_accel_Receiver
-  accel: {x: 0, y: 0, z: 0}
-  jc_ind: 0
 --- !u!114 &1706680311520195614
 MonoBehaviour:
   m_ObjectHideFlags: 0
