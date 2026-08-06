@@ -6,9 +6,9 @@ using UnityEngine;
 /// 衝突解決（弾性衝突の物理計算）はPlayerCollisionHandlerが、
 /// ノックバック状態・空中制御弱体化の判定はKnockbackControllerが、
 /// 接地判定はGroundCheckerがそれぞれ担当する。
-/// MoveManager_Testはそれらが公開する状態を読み取り、移動意図に反映するだけ。
+/// MoveManagerTestはそれらが公開する状態を読み取り、移動意図に反映するだけ。
 /// </summary>
-public class MoveManager_Test : InputManager_Test
+public class MoveManagerTest : InputManagerTest
 {
     // 移動方向の入力値
     private const float INPUT_POSITIVE_DIRECTION = 1f;
@@ -49,7 +49,7 @@ public class MoveManager_Test : InputManager_Test
 
     protected override void Awake()
     {
-        base.Awake(); // InputManager_JoyconTest.Awake()でrbを初期化する
+        base.Awake(); // InputManagerTest.Awake()でrbを初期化する
 
         if (knockbackController == null)
         {
@@ -59,7 +59,7 @@ public class MoveManager_Test : InputManager_Test
 
     protected override void Update()
     {
-        base.Update(); // InputManager_JoyconTest.Update()でJoy-Conスティックのポーリング・入力選択を行う
+        base.Update(); // InputManagerTest.Update()でJoy-Conスティックのポーリング・入力選択を行う
 
         GetMoveDirection();
         if (!GetInputRight() && !GetInputLeft() && !GetInputUp() && !GetInputDown())

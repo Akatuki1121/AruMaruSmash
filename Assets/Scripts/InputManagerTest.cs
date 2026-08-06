@@ -14,7 +14,7 @@ using UnityEngine.InputSystem;
 /// デッドゾーンも採用元に応じて切り替える（Joy-Conはキャリブレーションのずれで
 /// ゼロ点が微妙にずれることがあるため、専用の値を持つ）。
 /// </summary>
-public class InputManager_Test : MonoBehaviour
+public class InputManagerTest : MonoBehaviour
 {
     // 入力のデッドゾーン（Input System側：キーボード・ゲームパッド用）
     private const float DEFAULT_DEADZONE = 0.3f;

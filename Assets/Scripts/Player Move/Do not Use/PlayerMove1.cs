@@ -1,7 +1,4 @@
-using NUnit.Framework;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 /// <summary>
 /// Joy-Conの加速度センサーの値を取得して、傾き量を検知するスクリプト。
@@ -14,7 +11,7 @@ public class Player_Move1 : MonoBehaviour
     Joycon_accel_Receiver JoyAccelRec;
     public Vector3 JoyAccel;
 
-    
+
 
     [Header("速度")]
     float maxSpeed = 50f;  // 最大速度
@@ -24,7 +21,7 @@ public class Player_Move1 : MonoBehaviour
     float rotationSpeed = 50f;  // 旋回速度
     private Vector3 moveDirection = Vector3.zero;
 
-   
+
     private Vector3 currentMoveDirection;
     private Vector3 lastMoveDirection;
 

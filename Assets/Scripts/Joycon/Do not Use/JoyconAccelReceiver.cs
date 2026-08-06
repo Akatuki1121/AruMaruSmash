@@ -3,18 +3,18 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// Joy-Con‚Ì‰Á‘¬“xƒZƒ“ƒT[‚Ì’l‚ğæ“¾‚µ‚ÄAŒX‚«—Ê‚ğŒŸ’m‚·‚éƒXƒNƒŠƒvƒgB
+/// Joy-Conï¿½Ì‰ï¿½ï¿½ï¿½ï¿½xï¿½Zï¿½ï¿½ï¿½Tï¿½[ï¿½Ì’lï¿½ï¿½ï¿½æ“¾ï¿½ï¿½ï¿½ÄAï¿½Xï¿½ï¿½ï¿½Ê‚ï¿½ï¿½ï¿½ï¿½mï¿½ï¿½ï¿½ï¿½Xï¿½Nï¿½ï¿½ï¿½vï¿½gï¿½B
 /// 
-/// Player_Move.cs‚Éaccel‚Ì’l‚ğ“n‚·B
+/// Player_Move.csï¿½ï¿½accelï¿½Ì’lï¿½ï¿½nï¿½ï¿½ï¿½B
 /// 
-/// JoyconDemo.cs‚©‚çˆê•”‚ğ”²ˆ‚µƒRƒsƒy‚µ‚½‚à‚ÌB
+/// JoyconDemo.csï¿½ï¿½ï¿½ï¿½ê•”ï¿½ğ”²ï¿½ï¿½ï¿½ï¿½Rï¿½sï¿½yï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌB
 /// <summary>
 
-public class Joycon_accel_Receiver : MonoBehaviour
+public class JoyconAccelReceiver : MonoBehaviour
 {
     private List<Joycon> joycons;
 
-    public Vector3 accel;   // ŒX‚«ŒŸ’m—p
+    public Vector3 accel;   // ï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½mï¿½p
     public int jc_ind = 0;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
