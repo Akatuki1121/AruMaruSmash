@@ -7,9 +7,9 @@ using UnityEngine.InputSystem;
 /// JoyconDemo.csから一部を抜粋しコピペしたもの。
 /// </summary>
 
-public class TopDown_PlayerMove : MonoBehaviour
+public class TopDownPlayerMove : MonoBehaviour
 {
-    Joycon_accel_Receiver JoyAccelRec;
+    JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
     [Header("速度設定")]
@@ -48,7 +48,7 @@ public class TopDown_PlayerMove : MonoBehaviour
     {
         //if (JoyAccelRec == null)
         //{
-        //    JoyAccelRec = GetComponent<Joycon_accel_Receiver>();
+        //    JoyAccelRec = GetComponent<JoyconAccelReceiver>();
         //}
         if (rb == null)
         {

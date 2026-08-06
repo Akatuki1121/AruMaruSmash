@@ -1,19 +1,19 @@
 using UnityEngine;
 
 /// <summary>
-/// TPS—pF¶‰E‚ÌŒX‚«‚Åù‰ñA‘OŒã‚ÌŒX‚«‚Å‘OŒãˆÚ“®‚·‚éƒXƒNƒŠƒvƒgB
+/// TPSï¿½pï¿½Fï¿½ï¿½ï¿½Eï¿½ÌŒXï¿½ï¿½ï¿½Åï¿½ï¿½ï¿½Aï¿½Oï¿½ï¿½ÌŒXï¿½ï¿½ï¿½Å‘Oï¿½ï¿½Ú“ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½Nï¿½ï¿½ï¿½vï¿½gï¿½B
 /// </summary>
-public class TPS_PlayerMove : MonoBehaviour
+public class TPSPlayerMove : MonoBehaviour
 {
-    Joycon_accel_Receiver JoyAccelRec;
+    JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
-    [Header("‘¬“xÝ’è")]
-    public float maxSpeed = 8f;         // Å‘å‘¬“x
-    public float acceleration = 16f;    // ‰Á‘¬“x
-    public float currentSpeed = 0f;    // Œ»Ý‚Ì‘¬“x
-    public float brakeSpeed = 40f;     // Œ¸‘¬iƒuƒŒ[ƒLj‘¬“x
-    public float rotationSpeed = 120f;  // ù‰ñ‘¬“x
+    [Header("ï¿½ï¿½ï¿½xï¿½Ý’ï¿½")]
+    public float maxSpeed = 8f;         // ï¿½Å‘å‘¬ï¿½x
+    public float acceleration = 16f;    // ï¿½ï¿½ï¿½ï¿½ï¿½x
+    public float currentSpeed = 0f;    // ï¿½ï¿½ï¿½Ý‚Ì‘ï¿½ï¿½x
+    public float brakeSpeed = 40f;     // ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½uï¿½ï¿½ï¿½[ï¿½Lï¿½jï¿½ï¿½ï¿½x
+    public float rotationSpeed = 120f;  // ï¿½ï¿½ï¿½ñ‘¬“x
 
     private Vector3 moveDirection = Vector3.zero;
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
@@ -30,10 +30,10 @@ public class TPS_PlayerMove : MonoBehaviour
     {
         Vector3 oldDir = moveDirection;
 
-        // ù‰ñ‚Æ‘OŒãˆÚ“®‚Ì“ü—Í‚ðŽæ“¾
+        // ï¿½ï¿½ï¿½ï¿½Æ‘Oï¿½ï¿½Ú“ï¿½ï¿½Ì“ï¿½ï¿½Í‚ï¿½ï¿½æ“¾
         GetMoveDirection();
 
-        // ‰ÁŒ¸‘¬ƒƒWƒbƒNi‘OŒãˆÚ“®‚Ì”½“]EƒuƒŒ[ƒL—pj
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½bï¿½Nï¿½iï¿½Oï¿½ï¿½Ú“ï¿½ï¿½Ì”ï¿½ï¿½]ï¿½Eï¿½uï¿½ï¿½ï¿½[ï¿½Lï¿½pï¿½j
         if (currentSpeed > 0.1f)
         {
             if (Vector3.Dot(oldDir, moveDirection) < -0.1f)
@@ -72,11 +72,11 @@ public class TPS_PlayerMove : MonoBehaviour
     {
         if (moveDirection.sqrMagnitude > 0)
         {
-            // Ž©•ª‚Ì¡‚ÌŒü‚«iù‰ñŒãj‚É‘Î‚µ‚Ä‘OiEŒã‘Þ‚ÌƒxƒNƒgƒ‹‚ðŒvŽZ
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Ìï¿½ï¿½ÌŒï¿½ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½ï¿½jï¿½É‘Î‚ï¿½ï¿½Ä‘Oï¿½iï¿½Eï¿½ï¿½Þ‚Ìƒxï¿½Nï¿½gï¿½ï¿½ï¿½ï¿½ï¿½vï¿½Z
             Vector3 localMoveDir = transform.rotation * moveDirection;
             Vector3 targetVelocity = localMoveDir * speed;
 
-            // â“¹‘Î‰ž
+            // ï¿½â“¹ï¿½Î‰ï¿½
             Ray ray = new Ray(rb.position + Vector3.up * 0.2f, Vector3.down);
             if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
             {
@@ -96,18 +96,18 @@ public class TPS_PlayerMove : MonoBehaviour
         float moveZ = 0;
         float rotationInput = 0f;
 
-        // ‘OŒã‚ÌŒX‚«iYŽ²j‚ÅA‘Oii+1j‚Ü‚½‚ÍŒã‘Þi-1j
+        // ï¿½Oï¿½ï¿½ÌŒXï¿½ï¿½ï¿½iYï¿½ï¿½ï¿½jï¿½ÅAï¿½Oï¿½iï¿½i+1ï¿½jï¿½Ü‚ï¿½ï¿½ÍŒï¿½Þi-1ï¿½j
         if (GetTiltY() > 0.2f) moveZ -= 1f;
         if (GetTiltY() < -0.2f) moveZ += 1f;
 
-        // ¶‰E‚ÌŒX‚«iXŽ²j‚ÅA‰Eù‰ñi+1j‚Ü‚½‚Í¶ù‰ñi-1j
+        // ï¿½ï¿½ï¿½Eï¿½ÌŒXï¿½ï¿½ï¿½iXï¿½ï¿½ï¿½jï¿½ÅAï¿½Eï¿½ï¿½ï¿½ï¿½i+1ï¿½jï¿½Ü‚ï¿½ï¿½Íï¿½ï¿½ï¿½ï¿½ï¿½i-1ï¿½j
         if (GetTiltX() > 0.2f) rotationInput += 1f;
         if (GetTiltX() < -0.2f) rotationInput -= 1f;
 
-        // ‚»‚Ìê‚ÅƒLƒƒƒ‰ƒNƒ^[‚ÌŒü‚«‚ð‰ñ“]‚³‚¹‚é
+        // ï¿½ï¿½ï¿½Ìï¿½ÅƒLï¿½ï¿½ï¿½ï¿½ï¿½Nï¿½^ï¿½[ï¿½ÌŒï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½]ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         transform.Rotate(0f, rotationInput * rotationSpeed * Time.deltaTime, 0f);
 
-        // ˆÚ“®•ûŒü‚Íƒˆ‚É‘OŒãiZŽ²j‚Ì“ü—Í‚Ì‚Ý‚É‚·‚éi¶‰E‚Ì‰¡ŠŠ‚è‚Í‚³‚¹‚È‚¢j
+        // ï¿½Ú“ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íï¿½ï¿½ï¿½ï¿½É‘Oï¿½ï¿½iZï¿½ï¿½ï¿½jï¿½Ì“ï¿½ï¿½Í‚Ì‚Ý‚É‚ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½Eï¿½Ì‰ï¿½ï¿½ï¿½ï¿½ï¿½Í‚ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½j
         Vector3 inputVector = new Vector3(0f, 0f, moveZ);
 
         if (inputVector.sqrMagnitude > 0)

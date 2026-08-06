@@ -13,10 +13,10 @@ using UnityEngine.InputSystem;
 /// さらに、移動方向の入力が直前のmoveDirectionと逆向き（内積が負）になった瞬間は
 /// 車の急ブレーキのようにtiltAmountを急減速させる。
 ///
-/// MoveManager_Testの speed には (1 + tiltAmount * accelMultiplier) を掛けて反映する。
-/// MoveManager_Test本体の改造を避けるため、外部からspeedを書き換える形にしている。
+/// MoveManagerTestの speed には (1 + tiltAmount * accelMultiplier) を掛けて反映する。
+/// MoveManagerTest本体の改造を避けるため、外部からspeedを書き換える形にしている。
 /// </summary>
-[RequireComponent(typeof(MoveManager_Test))]
+[RequireComponent(typeof(MoveManagerTest))]
 public class AccelTiltTest : MonoBehaviour
 {
     // 浮動小数点数の許容値
@@ -37,9 +37,9 @@ public class AccelTiltTest : MonoBehaviour
     private const float INPUT_DIRECTION_NEGATIVE = -1f;
 
     [Header("参照")]
-    private MoveManager_Test moveManager;
+    private MoveManagerTest moveManager;
 
-    [Header("ベース速度（MoveManager_Test.speedの基準値として保持）")]
+    [Header("ベース速度（MoveManagerTest.speedの基準値として保持）")]
     public float baseSpeed = 1f;
 
     [Header("Qキー：長押し加速")]
@@ -71,7 +71,7 @@ public class AccelTiltTest : MonoBehaviour
     // 現在の傾き量（0〜1）。これがそのまま速度倍率の元になる
     public float tiltAmount = 0f;
 
-    // 直前フレームのmoveDirection（MoveManager_Test側はprivateなので、入力から同じロジックで自前計算する）
+    // 直前フレームのmoveDirection（MoveManagerTest側はprivateなので、入力から同じロジックで自前計算する）
     private Vector3 previousMoveDirection = Vector3.zero;
 
     private bool isBraking = false;
@@ -79,7 +79,7 @@ public class AccelTiltTest : MonoBehaviour
 
     private void Awake()
     {
-        moveManager = GetComponent<MoveManager_Test>();
+        moveManager = GetComponent<MoveManagerTest>();
         if (baseSpeed <= 0f)
         {
             baseSpeed = moveManager.speed;
@@ -175,7 +175,7 @@ public class AccelTiltTest : MonoBehaviour
         }
     }
 
-    // MoveManager_Test.GetMoveDirection()と同じロジックで、現フレームの入力方向だけを取得する
+    // MoveManagerTest.GetMoveDirection()と同じロジックで、現フレームの入力方向だけを取得する
     // (MoveManager_Test.moveDirectionはprivateで慣性減衰が混ざっているため、純粋な入力方向を別途计算する)
     private Vector3 GetCurrentInputDirection()
     {
