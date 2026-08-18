@@ -18,6 +18,9 @@ public class TopDownPlayerMove : MonoBehaviour
     public float brakeSpeed = 5f;     // 減速（ブレーキ）速度
     public float acceleration = 2f;   // 加速速度
 
+    [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
+    public CharacterStats stats;
+
     private Vector3 moveDirection = Vector3.zero;
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
 
@@ -53,6 +56,15 @@ public class TopDownPlayerMove : MonoBehaviour
         if (rb == null)
         {
             rb = GetComponent<Rigidbody>();
+        }
+
+        // statsが設定されている場合のみ、Inspectorの初期値をSOの値で上書きする
+        // （rotationSpeedはTopDownでは未使用のため対象外）
+        if (stats != null)
+        {
+            maxSpeed = stats.maxSpeed;
+            acceleration = stats.acceleration;
+            brakeSpeed = stats.brakeSpeed;
         }
 
         // Joy-Conの接続を試みる

@@ -9,7 +9,7 @@ using UnityEngine;
 /// - ロック終了後、空中にいる間だけ入力の効きを弱める「空中制御弱体化」の判定
 /// - Y方向（上向き）の吹っ飛び初速の適用（rb.linearVelocity.yに直接反映、落下は重力に任せる）
 ///
-/// MoveManager_Testはこのクラスが公開する状態（CurrentKnockbackVelocity, IsLocked,
+/// MoveManagerTestはこのクラスが公開する状態（CurrentKnockbackVelocity, IsLocked,
 /// IsAirControlWeakened, AirControlMultiplier）を読むだけで、
 /// 自分でタイマーやノックバック量を管理する必要がない。
 /// </summary>
@@ -37,6 +37,9 @@ public class KnockbackController : MonoBehaviour
     [Header("ノックバックの減衰")]
     [Tooltip("ノックバック速度が時間経過でどれだけ早く0に近づくか")]
     public float knockbackDecaySpeed = 4f;
+
+    [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
+    public CharacterStats stats;
 
     // 現在保持しているXZ方向のノックバック速度
     private Vector3 knockbackVelocity = Vector3.zero;
@@ -69,6 +72,15 @@ public class KnockbackController : MonoBehaviour
         if (groundChecker == null)
         {
             groundChecker = GetComponent<GroundChecker>();
+        }
+
+        // statsが設定されている場合のみ、Inspectorの初期値をSOの値で上書きする
+        if (stats != null)
+        {
+            knockbackLockDuration = stats.knockbackLockDuration;
+            airControlMultiplier = stats.airControlMultiplier;
+            airControlKnockbackThreshold = stats.airControlKnockbackThreshold;
+            knockbackDecaySpeed = stats.knockbackDecaySpeed;
         }
 
         wasGroundedLastFrame = IsGrounded;

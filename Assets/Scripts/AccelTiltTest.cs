@@ -176,7 +176,7 @@ public class AccelTiltTest : MonoBehaviour
     }
 
     // MoveManagerTest.GetMoveDirection()と同じロジックで、現フレームの入力方向だけを取得する
-    // (MoveManager_Test.moveDirectionはprivateで慣性減衰が混ざっているため、純粋な入力方向を別途计算する)
+    // (MoveManagerTest.moveDirectionはprivateで慣性減衰が混ざっているため、純粋な入力方向を別途计算する)
     private Vector3 GetCurrentInputDirection()
     {
         float moveX = 0f;
