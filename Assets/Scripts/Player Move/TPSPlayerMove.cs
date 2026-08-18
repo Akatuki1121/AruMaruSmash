@@ -15,6 +15,9 @@ public class TPSPlayerMove : MonoBehaviour
     public float brakeSpeed = 40f;     // �����i�u���[�L�j���x
     public float rotationSpeed = 120f;  // ���񑬓x
 
+    [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
+    public CharacterStats stats;
+
     private Vector3 moveDirection = Vector3.zero;
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
 
@@ -24,6 +27,15 @@ public class TPSPlayerMove : MonoBehaviour
     {
         if (JoyAccelRec == null) JoyAccelRec = GetComponent<JoyconAccelReceiver>();
         if (rb == null) rb = GetComponent<Rigidbody>();
+
+        // statsが設定されている場合のみ、Inspectorの初期値をSOの値で上書きする
+        if (stats != null)
+        {
+            maxSpeed = stats.maxSpeed;
+            acceleration = stats.acceleration;
+            brakeSpeed = stats.brakeSpeed;
+            rotationSpeed = stats.rotationSpeed;
+        }
     }
 
     void Update()
