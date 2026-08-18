@@ -11,7 +11,7 @@ using UnityEngine.EventSystems;
 
 public class Player_Move : MonoBehaviour
 {
-    Joycon_accel_Receiver JoyAccelRec;
+    JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
     [HideInInspector] public Rigidbody rb;
@@ -25,7 +25,7 @@ public class Player_Move : MonoBehaviour
     {
         if(JoyAccelRec == null)
         {
-            JoyAccelRec = GetComponent<Joycon_accel_Receiver>();
+            JoyAccelRec = GetComponent<JoyconAccelReceiver>();
         }
 
         if(rb == null)

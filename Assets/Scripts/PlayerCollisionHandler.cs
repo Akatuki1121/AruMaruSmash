@@ -11,12 +11,12 @@ using UnityEngine;
 /// - 同じ相手との短時間での再衝突を無視する「ペアごとの無敵時間」管理
 ///   （壁・ギミック等、PlayerCollisionHandlerを持たない相手との衝突はこの対象外で、常に反応する）
 /// </summary>
-[RequireComponent(typeof(MoveManager_Test))]
+[RequireComponent(typeof(MoveManagerTest))]
 [RequireComponent(typeof(KnockbackController))]
 public class PlayerCollisionHandler : MonoBehaviour
 {
     [Header("参照")]
-    private MoveManager_Test moveManager;
+    private MoveManagerTest moveManager;
     private KnockbackController knockbackController;
 
     [Header("衝突反応（同質量の弾性衝突ベース）")]
@@ -51,7 +51,7 @@ public class PlayerCollisionHandler : MonoBehaviour
 
     private void Awake()
     {
-        moveManager = GetComponent<MoveManager_Test>();
+        moveManager = GetComponent<MoveManagerTest>();
         knockbackController = GetComponent<KnockbackController>();
         wasGroundedLastFrame = knockbackController.IsGrounded;
     }

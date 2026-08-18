@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class PlayerSelector : MonoBehaviour
 {
-    Joycon_accel_Receiver JoyAccelRec;
+    JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
     private Joycon joycon; // ê⁄ë±Ç≥ÇÍÇƒÇ¢ÇÈJoy-Conñ{ëÃÇ÷ÇÃéQè∆

@@ -22,7 +22,7 @@ public class TPSPlayerMove : MonoBehaviour
 
     void Start()
     {
-        if (JoyAccelRec == null) JoyAccelRec = GetComponent<Joycon_accel_Receiver>();
+        if (JoyAccelRec == null) JoyAccelRec = GetComponent<JoyconAccelReceiver>();
         if (rb == null) rb = GetComponent<Rigidbody>();
     }
 
