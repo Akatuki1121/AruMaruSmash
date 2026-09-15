@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 240506125649400888}
   - component: {fileID: -59254865763309353}
   - component: {fileID: 9051538524837917794}
-  - component: {fileID: 1977582851436274573}
   m_Layer: 0
   m_Name: TD Test Player B
   m_TagString: Untagged
@@ -159,6 +158,7 @@ MonoBehaviour:
   currentSpeed: 0
   brakeSpeed: 8
   acceleration: 3
+  stats: {fileID: 0}
   rb: {fileID: -59254865763309353}
   tiltAmount: 0
   dashAmount: 1
@@ -166,17 +166,3 @@ MonoBehaviour:
   dashSpeedMultiplier: 1
   dashTiltAmount: 0
   joyconIndex: 1
---- !u!114 &1977582851436274573
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 890238701697212746}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 405bad29b2b998c408059182c189d9e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::JoyconManager
-  EnableIMU: 1
-  EnableLocalize: 1
