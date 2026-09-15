@@ -14,6 +14,10 @@ GameObject:
   - component: {fileID: 240506125649400888}
   - component: {fileID: -59254865763309353}
   - component: {fileID: 9051538524837917794}
+  - component: {fileID: 7481027891915704389}
+  - component: {fileID: 5619131339603559581}
+  - component: {fileID: 8896216646330967084}
+  - component: {fileID: 5568577207410613102}
   m_Layer: 0
   m_Name: TD Test Player B
   m_TagString: Untagged
@@ -166,3 +170,74 @@ MonoBehaviour:
   dashSpeedMultiplier: 1
   dashTiltAmount: 0
   joyconIndex: 1
+--- !u!114 &7481027891915704389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890238701697212746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
+  groundTag: Ground
+--- !u!114 &5619131339603559581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890238701697212746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c5e6e6e65cff7140ac38130e3bd8ff9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
+  groundChecker: {fileID: 0}
+  knockbackLockDuration: 0.25
+  airControlMultiplier: 0.3
+  airControlKnockbackThreshold: 0.5
+  knockbackDecaySpeed: 4
+  stats: {fileID: 0}
+--- !u!114 &8896216646330967084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890238701697212746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bb7be3969f38294d8e3c68017c7881e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoveManagerTest
+  deadzone: 0.3
+  rb: {fileID: 0}
+  joyconIndex: 0
+  joyconDeadzone: 0.3
+  speed: 5
+  turnSpeedSame: 720
+  turnSpeedReverse: 90
+  turnSpeedCurve: 5
+  reverseTurnSpeedMultiplierMin: 0.3
+  knockbackController: {fileID: 0}
+--- !u!114 &5568577207410613102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890238701697212746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
+  asymmetryFactor: 0.85
+  bounceForceMultiplier: 1
+  upwardForcePerSpeed: 0.6
+  minUpwardForce: 1.5
+  maxUpwardForce: 8
+  sameTargetCooldown: 0.4
