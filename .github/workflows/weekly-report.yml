@@ -14,6 +14,7 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+  models: read
 
 jobs:
   generate:
@@ -24,6 +25,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -55,6 +57,55 @@ jobs:
 
             // 全メンバー（memberInfo のキー = GitHubログイン名）
             const logins = Object.keys(memberInfo);
+
+            // コミット・Issue/PRからAIで「進捗・成果」「備考」を生成（GitHub Models, 無料枠）
+            async function generateSummary(commits, events) {
+              if (commits.length === 0 && events.length === 0) {
+                return { progress: '', notes: '' };
+              }
+              try {
+                const promptLines = [];
+                if (commits.length > 0) {
+                  promptLines.push('コミット:');
+                  for (const c of commits) promptLines.push(`- ${c}`);
+                }
+                if (events.length > 0) {
+                  promptLines.push('Issue/PR:');
+                  for (const e of events) promptLines.push(`- ${e}`);
+                }
+                const res = await fetch('https://models.github.ai/inference/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    model: 'openai/gpt-4o-mini',
+                    messages: [
+                      {
+                        role: 'system',
+                        content: '学生ゲーム開発チームの週報の下書きを作るアシスタントです。与えられたコミットメッセージとIssue/PRの一覧から、(1)今週の進捗・成果を2〜4行の簡潔な日本語の箇条書きで、(2)備考（気になる点・次週への申し送りがあれば1〜2行、無ければ空文字）を作成してください。出力は必ず次のJSON形式のみで返し、他の文章は含めないでください: {"progress": "...", "notes": "..."}',
+                      },
+                      { role: 'user', content: promptLines.join('\n') },
+                    ],
+                    temperature: 0.3,
+                  }),
+                });
+                if (!res.ok) {
+                  core.warning(`AI要約に失敗: ${res.status} ${await res.text()}`);
+                  return { progress: '', notes: '' };
+                }
+                const data = await res.json();
+                const text = data.choices?.[0]?.message?.content || '';
+                const match = text.match(/\{[\s\S]*\}/);
+                if (!match) return { progress: '', notes: '' };
+                const parsed = JSON.parse(match[0]);
+                return { progress: parsed.progress || '', notes: parsed.notes || '' };
+              } catch (e) {
+                core.warning(`AI要約でエラー: ${e.message}`);
+                return { progress: '', notes: '' };
+              }
+            }
 
             // コミット取得（デフォルトブランチ、author別に集計）
             const commitsByAuthor = {};
@@ -135,6 +186,7 @@ jobs:
               const commits = commitsByAuthor[login] || [];
               const events = issueEventsByUser[login] || [];
               const info = memberInfo[login] || { studentId: '', name: '' };
+              const summary = await generateSummary(commits, events);
 
               const lines = [];
               lines.push(`学籍番号：${info.studentId}`);
@@ -153,8 +205,10 @@ jobs:
               }
               lines.push('');
               lines.push('■ 進捗・成果');
+              lines.push(summary.progress || '');
               lines.push('');
               lines.push('■ 備考');
+              lines.push(summary.notes || '');
               lines.push('');
 
 
