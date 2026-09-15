@@ -2,8 +2,8 @@ name: Weekly Report Draft
 
 on:
   schedule:
-    # 毎週火曜 11:00 JST = 火曜 02:00 UTC
-    - cron: '0 2 * * 2'
+    # 毎週火曜 14:00 JST = 火曜 05:00 UTC（毎時ちょうどは混雑するため05分にずらす）
+    - cron: '5 5 * * 2'
   workflow_dispatch: {}
 
 concurrency:
