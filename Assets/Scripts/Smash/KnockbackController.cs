@@ -130,8 +130,12 @@ public class KnockbackController : MonoBehaviour
     /// </summary>
     public void ApplyUpwardBounce(float upForce)
     {
+        
         Vector3 v = rb.linearVelocity;
         v.y = upForce;
         rb.linearVelocity = v;
+
+        if (TryGetComponent(out TopDownPlayerMove move))
+            move.StartKnockback(0.3f);
     }
 }

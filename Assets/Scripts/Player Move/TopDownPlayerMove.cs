@@ -46,6 +46,12 @@ public class TopDownPlayerMove : MonoBehaviour
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
     private Joycon joycon; // 接続されているJoy-Con本体への参照
 
+    private float knockbackTimer = 0f;
+    private bool knockedAirborne = false;                 // 吹っ飛ばされて着地するまでの間true
+    private KnockbackController knockback;                // 着地判定の参照用
+    private const float KNOCKBACK_MAX_AIR_TIME = 3f;      // 着地を検知できなかった場合の安全弁（秒）
+    public bool IsKnockedBack => knockbackTimer > 0f || knockedAirborne;   // ノックバック中フラグ（着地まで継続）
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -67,6 +73,9 @@ public class TopDownPlayerMove : MonoBehaviour
             brakeSpeed = stats.brakeSpeed;
         }
 
+        // 着地判定用にKnockbackControllerを取得しておく
+        knockback = GetComponent<KnockbackController>();
+
         // Joy-Conの接続を試みる
         TryAcquireJoyCon();
     }
@@ -74,6 +83,20 @@ public class TopDownPlayerMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // 吹っ飛び中：最低限のロック時間が過ぎたうえで着地したら、通常操作に復帰する
+        // （着地を検知できない場合でも、安全弁の時間を超えたら復帰する）
+        if (knockedAirborne && knockbackTimer <= 0f &&
+            (knockback == null || knockback.IsGrounded || knockbackTimer < -KNOCKBACK_MAX_AIR_TIME))
+        {
+            knockedAirborne = false;
+        }
+
+        if (IsKnockedBack)
+        {
+            knockbackTimer -= Time.deltaTime;
+            return;
+        }
+
         if (JoyconManager.Instance != null && JoyconManager.Instance.j != null)
         {
             // 接続されているジョイコンの数を画面上に常時出す
@@ -139,6 +162,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (IsKnockedBack) return;
         PlayerMove(currentSpeed);
     }
 
@@ -297,5 +321,13 @@ public class TopDownPlayerMove : MonoBehaviour
         }
 
         dashTiltAmount = Mathf.Clamp01(dashTiltAmount);
+    }
+
+    public void StartKnockback(float duation)
+    {
+        knockbackTimer = duation;
+        knockedAirborne = true;   // 着地するまで入力による速度の上書きを止める
+        currentSpeed = 0f;
+        moveDirection = Vector3.zero;
     }
 }

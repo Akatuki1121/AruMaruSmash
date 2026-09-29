@@ -432,6 +432,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3291036865661844429, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: knockbackDecaySpeed
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.8973162
