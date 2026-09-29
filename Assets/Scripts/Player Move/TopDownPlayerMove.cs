@@ -52,6 +52,8 @@ public class TopDownPlayerMove : MonoBehaviour
     private const float KNOCKBACK_MAX_AIR_TIME = 3f;      // 着地を検知できなかった場合の安全弁（秒）
     public bool IsKnockedBack => knockbackTimer > 0f || knockedAirborne;   // ノックバック中フラグ（着地まで継続）
 
+    public bool IsAttack;   // 攻撃フラグ
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -78,6 +80,9 @@ public class TopDownPlayerMove : MonoBehaviour
 
         // Joy-Conの接続を試みる
         TryAcquireJoyCon();
+
+        // 攻撃時判定をリセット
+        IsAttack = false;
     }
 
     // Update is called once per frame
@@ -304,12 +309,14 @@ public class TopDownPlayerMove : MonoBehaviour
         // 統合した判定フラグを使ってダッシュの計算を行う
         if (isDashButtonDown)
         {
+            IsAttack = true;
             // ボタンを押した瞬間、一気に最大までジャンプ
             dashTiltAmount = Mathf.Max(dashTiltAmount, dashAmount);
         }
 
         if (isDashButtonHeld)
         {
+            IsAttack = true;
             // 押しっぱなしの間は高いダッシュ値を維持する
             dashTiltAmount = Mathf.Max(dashTiltAmount, dashAmount);
         }
@@ -318,6 +325,11 @@ public class TopDownPlayerMove : MonoBehaviour
             // 離されたら、指定された秒数(dashDuration)をかけて滑らかに減衰して0に戻る
             float decaySpeed = 1f / Mathf.Max(dashDuration, MOVEMENT_VELOCITY_EPSILON);
             dashTiltAmount = Mathf.MoveTowards(dashTiltAmount, 0f, decaySpeed * Time.deltaTime);
+        }
+
+        if(dashTiltAmount <= 0)
+        {
+            IsAttack = false;
         }
 
         dashTiltAmount = Mathf.Clamp01(dashTiltAmount);

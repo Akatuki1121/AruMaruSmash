@@ -65,6 +65,8 @@ public class KnockbackController : MonoBehaviour
 
     public float AirControlMultiplier => airControlMultiplier;
 
+    public TopDownPlayerMove PlayerMove;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -72,6 +74,11 @@ public class KnockbackController : MonoBehaviour
         if (groundChecker == null)
         {
             groundChecker = GetComponent<GroundChecker>();
+        }
+
+        if (PlayerMove == null)
+        {
+            PlayerMove = GetComponent<TopDownPlayerMove>();
         }
 
         // statsが設定されている場合のみ、Inspectorの初期値をSOの値で上書きする
@@ -122,20 +129,27 @@ public class KnockbackController : MonoBehaviour
     {
         horizontalForce.y = 0f;
         knockbackVelocity += horizontalForce;
-        knockbackLockTimer = knockbackLockDuration;
+
+        if (!PlayerMove.IsAttack)
+        {
+
+            knockbackLockTimer = knockbackLockDuration;
+        }
     }
 
     /// <summary>
     /// Y方向（上向き）の吹っ飛び初速を与える。落下は重力に任せるため、ここでは初速の代入のみ行う。
     /// </summary>
-    public void ApplyUpwardBounce(float upForce)
+    public void ApplyUpwardBounce(float upForce, bool lockMovement = true)
     {
-        
+
         Vector3 v = rb.linearVelocity;
         v.y = upForce;
         rb.linearVelocity = v;
 
-        if (TryGetComponent(out TopDownPlayerMove move))
-            move.StartKnockback(0.3f);
+        if (PlayerMove != null && !PlayerMove.IsAttack)
+        {
+            PlayerMove.StartKnockback(0.3f);
+        }
     }
 }

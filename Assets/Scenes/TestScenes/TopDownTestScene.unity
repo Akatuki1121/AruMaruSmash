@@ -165,6 +165,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::JoyconManager
   EnableIMU: 1
   EnableLocalize: 1
+--- !u!114 &181835475 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9051538524837917794, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
+  m_PrefabInstance: {fileID: 537423750}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f04af9860e414c448b4a93c918f3c6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
 --- !u!1001 &447735431
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -251,6 +262,18 @@ PrefabInstance:
       value: TD Test Player B
       objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.89121157
       objectReference: {fileID: 0}
@@ -290,6 +313,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5619131339603559581, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
+      propertyPath: PlayerMove
+      value: 
+      objectReference: {fileID: 181835475}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -382,7 +409,7 @@ Transform:
   m_GameObject: {fileID: 968305973}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
-  m_LocalPosition: {x: 0, y: 13.82, z: -11.3}
+  m_LocalPosition: {x: 0, y: 39.1, z: -32.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -432,6 +459,17 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &1378850134 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8462564121325967356, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+  m_PrefabInstance: {fileID: 1403755474}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f04af9860e414c448b4a93c918f3c6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
 --- !u!1001 &1403755474
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -444,13 +482,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: TD Test Player A
       objectReference: {fileID: 0}
-    - target: {fileID: 1017920493824726076, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3291036865661844429, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
-      propertyPath: knockbackDecaySpeed
-      value: 4
+      propertyPath: PlayerMove
+      value: 
+      objectReference: {fileID: 1378850134}
+    - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalPosition.x
@@ -491,6 +537,10 @@ PrefabInstance:
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8462564121325967356, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: maxSpeed
+      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
