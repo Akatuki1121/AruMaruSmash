@@ -11,12 +11,12 @@ using UnityEngine;
 /// - 同じ相手との短時間での再衝突を無視する「ペアごとの無敵時間」管理
 ///   （壁・ギミック等、PlayerCollisionHandlerを持たない相手との衝突はこの対象外で、常に反応する）
 /// </summary>
-[RequireComponent(typeof(MoveManagerTest))]
 [RequireComponent(typeof(KnockbackController))]
 public class PlayerCollisionHandler : MonoBehaviour
 {
     [Header("参照")]
-    private MoveManagerTest moveManager;
+    private MoveManagerTest moveManager;      // 旧移動スクリプト（無くても動く）
+    private TopDownPlayerMove topDownMove;    // 実際の移動スクリプト
     private KnockbackController knockbackController;
 
     [Header("衝突反応（同質量の弾性衝突ベース）")]
@@ -52,6 +52,7 @@ public class PlayerCollisionHandler : MonoBehaviour
     private void Awake()
     {
         moveManager = GetComponent<MoveManagerTest>();
+        topDownMove = GetComponent<TopDownPlayerMove>();
         knockbackController = GetComponent<KnockbackController>();
         wasGroundedLastFrame = knockbackController.IsGrounded;
     }
@@ -80,6 +81,7 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         Vector3 contactNormal = collision.GetContact(0).normal; // otherからthisへ向かう方向
 
+        
         ResolvePlayerCollision(this, other, contactNormal);
 
         // 両者に「直前にぶつかった相手」を記録する
@@ -87,6 +89,15 @@ public class PlayerCollisionHandler : MonoBehaviour
         lastHitTime = Time.time;
         other.lastHitOther = this;
         other.lastHitTime = Time.time;
+    }
+
+    // 衝突計算に使う「入力由来のXZ移動速度」。実際に動かしているTopDownPlayerMoveを優先し、
+    // 無い場合のみMoveManagerTestにフォールバックする
+    private Vector3 GetCurrentMoveVelocity()
+    {
+        if (topDownMove != null) return topDownMove.GetInputMoveVelocity();
+        if (moveManager != null) return moveManager.GetInputMoveVelocity();
+        return Vector3.zero;
     }
 
     private static void ResolvePlayerCollision(PlayerCollisionHandler a, PlayerCollisionHandler b, Vector3 normalBtoA)
@@ -98,8 +109,8 @@ public class PlayerCollisionHandler : MonoBehaviour
         normal.Normalize();
 
         // 各プレイヤーの現在のXZ速度（入力由来の移動 + 既存のノックバック）を取得
-        Vector3 velA = a.moveManager.GetInputMoveVelocity() + a.knockbackController.CurrentKnockbackVelocity;
-        Vector3 velB = b.moveManager.GetInputMoveVelocity() + b.knockbackController.CurrentKnockbackVelocity;
+        Vector3 velA = a.GetCurrentMoveVelocity() + a.knockbackController.CurrentKnockbackVelocity;
+        Vector3 velB = b.GetCurrentMoveVelocity() + b.knockbackController.CurrentKnockbackVelocity;
 
         // 各速度を「法線方向の成分」と「接線方向の成分」に分解する
         float velA_n = Vector3.Dot(velA, normal);

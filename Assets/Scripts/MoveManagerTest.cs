@@ -140,7 +140,7 @@ public class MoveManagerTest : InputManagerTest
             Vector3 currentPos = rb.position;
             Vector3 delta = horizontalVelocity * Time.deltaTime;
             Vector3 nextPosition = new(currentPos.x + delta.x, currentPos.y, currentPos.z + delta.z);
-            rb.MovePosition(nextPosition);
+            //rb.MovePosition(nextPosition);
         }
     }
 
