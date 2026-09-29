@@ -13,13 +13,41 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+  actions: read
 
 jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
+      - name: Skip if manually run today (JST)
+        id: check
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 今日(JST)すでに手動実行(workflow_dispatch)が成功していれば、自動実行をスキップする
+            const jstDate = (iso) =>
+              new Date(Date.parse(iso) + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            const today = jstDate(new Date().toISOString());
+
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'weekly-report.yml',
+              event: 'workflow_dispatch',
+              status: 'success',
+              per_page: 20,
+            });
+
+            const manualToday = data.workflow_runs.some(r => jstDate(r.created_at) === today);
+            if (manualToday) {
+              core.notice('今日すでに手動実行が成功しているため、自動実行をスキップします。');
+            }
+            core.setOutput('skip', manualToday ? 'true' : 'false');
+
       - name: Generate weekly report drafts
         id: gen
+        if: steps.check.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
           DISCORD_CONFIG: ${{ secrets.DISCORD_CONFIG }}
@@ -189,6 +217,7 @@ jobs:
             core.setOutput('weekLabel', weekLabel);
 
       - name: Notify each member on Discord with their draft attached
+        if: steps.check.outputs.skip != 'true'
         uses: actions/github-script@v7
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
