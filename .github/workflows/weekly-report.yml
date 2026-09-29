@@ -1,5 +1,4 @@
 name: Weekly Report Draft
-
 on:
   schedule:
     # 毎週火曜 14:00 JST = 火曜 05:00 UTC（毎時ちょうどは混雑するため05分にずらす）
@@ -14,7 +13,6 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
-  models: read
 
 jobs:
   generate:
@@ -30,7 +28,6 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-
             const config = JSON.parse(process.env.DISCORD_CONFIG);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -55,80 +52,39 @@ jobs:
               return d.toISOString().slice(0, 10);
             }
 
-            // 全メンバー（memberInfo のキー = GitHubログイン名）
+            // 全メンバー（memberInfo のキー = GitHub ログイン名）
             const logins = Object.keys(memberInfo);
 
-            // コミット・Issue/PRからAIで「進捗・成果」「備考」を生成（GitHub Models, 無料枠）
-            async function generateSummary(commits, events) {
-              if (commits.length === 0 && events.length === 0) {
-                return { progress: '', notes: '' };
-              }
-              try {
-                const promptLines = [];
-                if (commits.length > 0) {
-                  promptLines.push('コミット:');
-                  for (const c of commits) promptLines.push(`- ${c}`);
-                }
-                if (events.length > 0) {
-                  promptLines.push('Issue/PR:');
-                  for (const e of events) promptLines.push(`- ${e}`);
-                }
-                const res = await fetch('https://models.github.ai/inference/chat/completions', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    model: 'openai/gpt-4o-mini',
-                    messages: [
-                      {
-                        role: 'system',
-                        content: '学生ゲーム開発チームの週報の下書きを作るアシスタントです。与えられたコミットメッセージとIssue/PRの一覧から、(1)今週の進捗・成果を2〜4行の簡潔な日本語の箇条書きで、(2)備考（気になる点・次週への申し送りがあれば1〜2行、無ければ空文字）を作成してください。出力は必ず次のJSON形式のみで返し、他の文章は含めないでください: {"progress": "...", "notes": "..."}',
-                      },
-                      { role: 'user', content: promptLines.join('\n') },
-                    ],
-                    temperature: 0.3,
-                  }),
-                });
-                if (!res.ok) {
-                  core.warning(`AI要約に失敗: ${res.status} ${await res.text()}`);
-                  return { progress: '', notes: '' };
-                }
-                const data = await res.json();
-                const text = data.choices?.[0]?.message?.content || '';
-                const match = text.match(/\{[\s\S]*\}/);
-                if (!match) return { progress: '', notes: '' };
-                const parsed = JSON.parse(match[0]);
-                return { progress: parsed.progress || '', notes: parsed.notes || '' };
-              } catch (e) {
-                core.warning(`AI要約でエラー: ${e.message}`);
-                return { progress: '', notes: '' };
-              }
-            }
-
-            // コミット取得（デフォルトブランチ、author別に集計）
+            // コミット取得（全ブランチ対象、author 別に集計）
             const commitsByAuthor = {};
             for (const login of logins) commitsByAuthor[login] = [];
+
+            const seenCommitShas = new Set();
 
             let page = 1;
             while (true) {
               const { data: commits } = await github.rest.repos.listCommits({
-                owner, repo,
+                owner,
+                repo,
                 since: sinceISO,
                 until: untilISO,
                 per_page: 100,
                 page,
               });
               if (commits.length === 0) break;
+
               for (const c of commits) {
+                const sha = c.sha;
+                if (seenCommitShas.has(sha)) continue; // 重複 SHA はスキップ
+                seenCommitShas.add(sha);
+
                 const login = c.author?.login;
                 const message = c.commit.message.split('\n')[0];
                 const date = c.commit.author?.date?.slice(0, 10) || '';
+
                 if (login && commitsByAuthor[login]) {
                   commitsByAuthor[login].push(`[${date}] ${message}`);
                 } else if (login) {
-                  // config未登録ユーザーのコミットも念のため拾う
                   commitsByAuthor[login] = commitsByAuthor[login] || [];
                   commitsByAuthor[login].push(`[${date}] ${message}`);
                 }
@@ -158,19 +114,29 @@ jobs:
               if (created >= since && created <= now) {
                 const login = item.user?.login;
                 if (login && issueEventsByUser[login]) {
-                  issueEventsByUser[login].push(`${kind}作成: #${item.number} ${item.title}`);
+                  const key = `${kind}作成:#${item.number}`;
+                  if (!issueEventsByUser[login].some(e => e.startsWith(key))) {
+                    issueEventsByUser[login].push(`${kind}作成: #${item.number} ${item.title}`);
+                  }
                 }
               }
-              // 今週クローズされたもの → assignee全員に記録
+
+              // 今週クローズされたもの → assignee 全員に記録
               if (closed && closed >= since && closed <= now) {
                 const assignees = (item.assignees || []).map(a => a.login);
                 for (const a of assignees) {
                   if (issueEventsByUser[a]) {
-                    issueEventsByUser[a].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                    const key = `${kind}クローズ:#${item.number}`;
+                    if (!issueEventsByUser[a].some(e => e.startsWith(key))) {
+                      issueEventsByUser[a].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                    }
                   }
                 }
                 if (assignees.length === 0 && item.user?.login && issueEventsByUser[item.user.login]) {
-                  issueEventsByUser[item.user.login].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                  const key = `${kind}クローズ:#${item.number}`;
+                  if (!issueEventsByUser[item.user.login].some(e => e.startsWith(key))) {
+                    issueEventsByUser[item.user.login].push(`${kind}クローズ: #${item.number} ${item.title}`);
+                  }
                 }
               }
             }
@@ -178,7 +144,6 @@ jobs:
             // 出力ディレクトリ
             const outDir = 'weekly-reports/draft';
             fs.mkdirSync(outDir, { recursive: true });
-
             const weekLabel = `${fmtDate(since)}〜${fmtDate(now)}`;
             const generatedFiles = [];
 
@@ -186,7 +151,6 @@ jobs:
               const commits = commitsByAuthor[login] || [];
               const events = issueEventsByUser[login] || [];
               const info = memberInfo[login] || { studentId: '', name: '' };
-              const summary = await generateSummary(commits, events);
 
               const lines = [];
               lines.push(`学籍番号：${info.studentId}`);
@@ -197,23 +161,20 @@ jobs:
               lines.push('■ 今週の作業内容');
               if (commits.length > 0) {
                 lines.push('・コミット:');
-                for (const c of commits) lines.push(`  - ${c}`);
+                for (const c of commits) lines.push(` - ${c}`);
               }
               if (events.length > 0) {
                 lines.push('・Issue/PR:');
-                for (const e of events) lines.push(`  - ${e}`);
+                for (const e of events) lines.push(` - ${e}`);
               }
               lines.push('');
               lines.push('■ 進捗・成果');
-              lines.push(summary.progress || '');
               lines.push('');
               lines.push('■ 備考');
-              lines.push(summary.notes || '');
               lines.push('');
 
-
               const content = lines.join('\n');
-              const fileName = `${info.studentId}${info.name}.txt`;
+              const fileName = `${info.studentId}_${info.name}.txt`;
               const filePath = path.join(outDir, fileName);
               fs.writeFileSync(filePath, content, 'utf8');
               generatedFiles.push({ login, filePath });
