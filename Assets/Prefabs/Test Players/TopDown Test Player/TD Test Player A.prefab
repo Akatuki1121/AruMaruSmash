@@ -14,8 +14,8 @@ GameObject:
   - component: {fileID: 6118032339298840857}
   - component: {fileID: 885649622215985095}
   - component: {fileID: 8462564121325967356}
-  - component: {fileID: 4569837613208632187}
   - component: {fileID: 1803062225970624556}
+  - component: {fileID: 4569837613208632187}
   - component: {fileID: 3291036865661844429}
   - component: {fileID: 1104409793882261765}
   m_Layer: 0
@@ -34,8 +34,8 @@ Transform:
   m_GameObject: {fileID: 1017920493824726076}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -33.3089, y: 0, z: 1.74814}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -170,19 +170,7 @@ MonoBehaviour:
   dashSpeedMultiplier: 1
   dashTiltAmount: 0
   joyconIndex: 0
---- !u!114 &4569837613208632187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1017920493824726076}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
-  groundTag: Ground
+  IsAttack: 0
 --- !u!114 &1803062225970624556
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,6 +193,19 @@ MonoBehaviour:
   turnSpeedCurve: 5
   reverseTurnSpeedMultiplierMin: 0.3
   knockbackController: {fileID: 0}
+--- !u!114 &4569837613208632187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1017920493824726076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
+  groundTag: Ground
 --- !u!114 &3291036865661844429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -223,6 +224,7 @@ MonoBehaviour:
   airControlKnockbackThreshold: 0.5
   knockbackDecaySpeed: 4
   stats: {fileID: 0}
+  PlayerMove: {fileID: 8462564121325967356}
 --- !u!114 &1104409793882261765
 MonoBehaviour:
   m_ObjectHideFlags: 0
