@@ -10,10 +10,14 @@ public class DebugFlowPanel : MonoBehaviour
     private const float PANEL_X = 10f;
     private const float PANEL_Y = 10f;
     private const float PANEL_WIDTH = 360f;
-    private const float PANEL_HEIGHT = 560f;
+    private const float HIDDEN_HEIGHT = 40f;
+    private const float REFERENCE_HEIGHT = 720f;   // この高さで等倍。窓の高さに比例して拡縮する
+    private const float MIN_SCALE = 0.6f;
+    private const float MAX_SCALE = 2f;
     private const int PLAYER_COUNT = PlayerRegistry.MAX_PLAYERS;
 
     private bool m_visible = true;
+    private Vector2 m_scroll;
 
     private void OnGUI()
     {
@@ -23,18 +27,28 @@ public class DebugFlowPanel : MonoBehaviour
             return;
         }
 
-        GUILayout.BeginArea(new Rect(PANEL_X, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT), GUI.skin.box);
+        // 窓の高さに合わせて拡縮し、はみ出す分はスクロールで見られるようにする
+        float scale = Mathf.Clamp(Screen.height / REFERENCE_HEIGHT, MIN_SCALE, MAX_SCALE);
+        Matrix4x4 previous_matrix = GUI.matrix;
+        GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+
+        float width = Mathf.Min(PANEL_WIDTH, Screen.width / scale - PANEL_X * 2f);
+        float height = m_visible ? Screen.height / scale - PANEL_Y * 2f : HIDDEN_HEIGHT;
+        GUILayout.BeginArea(new Rect(PANEL_X, PANEL_Y, width, height), GUI.skin.box);
         if (GUILayout.Button(m_visible ? "仮UIを隠す" : "仮UIを表示"))
         {
             m_visible = !m_visible;
         }
         if (m_visible)
         {
+            m_scroll = GUILayout.BeginScrollView(m_scroll);
             DrawHeader(flow);
             DrawPlayers(flow);
             DrawActions(flow);
+            GUILayout.EndScrollView();
         }
         GUILayout.EndArea();
+        GUI.matrix = previous_matrix;
     }
 
     private static void DrawHeader(GameFlowManager flow)
