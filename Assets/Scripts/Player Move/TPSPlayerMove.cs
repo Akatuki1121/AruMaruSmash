@@ -1,19 +1,19 @@
 using UnityEngine;
 
 /// <summary>
-/// TPS�p�F���E�̌X���Ő���A�O��̌X���őO��ړ�����X�N���v�g�B
+/// TPS用：左右の傾きで旋回、前後の傾きで前後移動するスクリプト。
 /// </summary>
 public class TPSPlayerMove : MonoBehaviour
 {
     JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
-    [Header("���x�ݒ�")]
-    public float maxSpeed = 8f;         // �ő呬�x
-    public float acceleration = 16f;    // �����x
-    public float currentSpeed = 0f;    // ���݂̑��x
-    public float brakeSpeed = 40f;     // �����i�u���[�L�j���x
-    public float rotationSpeed = 120f;  // ���񑬓x
+    [Header("速度設定")]
+    public float maxSpeed = 8f;         // 最大速度
+    public float acceleration = 16f;    // 加速度
+    public float currentSpeed = 0f;    // 現在の速度
+    public float brakeSpeed = 40f;     // 減速（ブレーキ）速度
+    public float rotationSpeed = 120f;  // 旋回速度
 
     [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
     public CharacterStats stats;
@@ -42,10 +42,10 @@ public class TPSPlayerMove : MonoBehaviour
     {
         Vector3 oldDir = moveDirection;
 
-        // ����ƑO��ړ��̓��͂��擾
+        // 旋回と前後移動の入力を取得
         GetMoveDirection();
 
-        // ���������W�b�N�i�O��ړ��̔��]�E�u���[�L�p�j
+        // 加減速ロジック（前後移動の反転・ブレーキ用）
         if (currentSpeed > 0.1f)
         {
             if (Vector3.Dot(oldDir, moveDirection) < -0.1f)
@@ -84,11 +84,11 @@ public class TPSPlayerMove : MonoBehaviour
     {
         if (moveDirection.sqrMagnitude > 0)
         {
-            // �����̍��̌����i�����j�ɑ΂��đO�i�E��ނ̃x�N�g�����v�Z
+            // 自分の今の向き（回転）に対して前進・後退のベクトルを計算
             Vector3 localMoveDir = transform.rotation * moveDirection;
             Vector3 targetVelocity = localMoveDir * speed;
 
-            // �⓹�Ή�
+            // 坂道対応
             Ray ray = new Ray(rb.position + Vector3.up * 0.2f, Vector3.down);
             if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
             {
@@ -108,18 +108,18 @@ public class TPSPlayerMove : MonoBehaviour
         float moveZ = 0;
         float rotationInput = 0f;
 
-        // �O��̌X���iY���j�ŁA�O�i�i+1�j�܂��͌�ށi-1�j
+        // 前後の傾き（Y軸）で、前進（+1）または後退（-1）
         if (GetTiltY() > 0.2f) moveZ -= 1f;
         if (GetTiltY() < -0.2f) moveZ += 1f;
 
-        // ���E�̌X���iX���j�ŁA�E����i+1�j�܂��͍�����i-1�j
+        // 左右の傾き（X軸）で、右旋回（+1）または左旋回（-1）
         if (GetTiltX() > 0.2f) rotationInput += 1f;
         if (GetTiltX() < -0.2f) rotationInput -= 1f;
 
-        // ���̏�ŃL�����N�^�[�̌�������]������
+        // その場でキャラクターの向きを回転させる
         transform.Rotate(0f, rotationInput * rotationSpeed * Time.deltaTime, 0f);
 
-        // �ړ������͏����ɑO��iZ���j�̓��݂͂̂ɂ���i���E�̉�����͂����Ȃ��j
+        // 移動方向は常に前後（Z軸）の入力のみにする（左右の横入力はしない）
         Vector3 inputVector = new Vector3(0f, 0f, moveZ);
 
         if (inputVector.sqrMagnitude > 0)
