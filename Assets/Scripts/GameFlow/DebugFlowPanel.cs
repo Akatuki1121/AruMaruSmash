@@ -7,8 +7,8 @@ using UnityEngine;
 /// </summary>
 public class DebugFlowPanel : MonoBehaviour
 {
-    private const float PANEL_X = 10f;
-    private const float PANEL_Y = 10f;
+    private const float PANEL_X = 200f;
+    private const float PANEL_Y = 80f;
     private const float PANEL_WIDTH = 360f;
     private const float HIDDEN_HEIGHT = 40f;
     private const float REFERENCE_HEIGHT = 720f;   // この高さで等倍。窓の高さに比例して拡縮する
@@ -27,13 +27,15 @@ public class DebugFlowPanel : MonoBehaviour
             return;
         }
 
-        // 窓の高さに合わせて拡縮し、はみ出す分はスクロールで見られるようにする
-        float scale = Mathf.Clamp(Screen.height / REFERENCE_HEIGHT, MIN_SCALE, MAX_SCALE);
+        // 窓の幅と高さに合わせて拡縮し、はみ出す分はスクロールで見られるようにする
+        float scale = Mathf.Clamp(Mathf.Min(
+            Screen.height / REFERENCE_HEIGHT,
+            Screen.width / PANEL_WIDTH), MIN_SCALE, MAX_SCALE);
         Matrix4x4 previous_matrix = GUI.matrix;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
 
-        float width = Mathf.Min(PANEL_WIDTH, Screen.width / scale - PANEL_X * 2f);
-        float height = m_visible ? Screen.height / scale - PANEL_Y * 2f : HIDDEN_HEIGHT;
+        float width = Mathf.Min(PANEL_WIDTH, (Screen.width / scale) - (PANEL_X * 2f));
+        float height = m_visible ? (Screen.height / scale) - (PANEL_Y * 2f) : HIDDEN_HEIGHT;
         GUILayout.BeginArea(new Rect(PANEL_X, PANEL_Y, width, height), GUI.skin.box);
         if (GUILayout.Button(m_visible ? "仮UIを隠す" : "仮UIを表示"))
         {
@@ -53,7 +55,7 @@ public class DebugFlowPanel : MonoBehaviour
 
     private static void DrawHeader(GameFlowManager flow)
     {
-        string leader = flow.Players.LeaderIndex >= 0 ? (flow.Players.LeaderIndex + 1) + "P" : "なし";
+        string leader = flow.Players.LeaderIndex >= 0 ? flow.Players.LeaderIndex + 1 + "P" : "なし";
         GUILayout.Label("状態: " + flow.State + " / リーダー: " + leader
             + (flow.IsInputLocked ? " / (フェード中)" : string.Empty));
         if (flow.State == GameState.Waiting)
@@ -75,7 +77,7 @@ public class DebugFlowPanel : MonoBehaviour
         {
             PlayerSlot p = flow.Players.slots[i];
             GUILayout.BeginHorizontal();
-            GUILayout.Label((i + 1) + "P " + p.connection
+            GUILayout.Label(i + 1 + "P " + p.connection
                 + (p.hasAssignedOk ? " 割当" : string.Empty)
                 + (p.isCharacterConfirmed ? " 準備" : string.Empty)
                 + (p.hasConfirmedReady ? " 確認" : string.Empty), GUILayout.Width(190f));
@@ -197,7 +199,7 @@ public class DebugFlowPanel : MonoBehaviour
         foreach (PlayerSlot p in flow.Players.ActivePlayers)
         {
             int index = p.index;
-            Button((index + 1) + "P", () => action(index));
+            Button(index + 1 + "P", () => action(index));
         }
         GUILayout.EndHorizontal();
     }
