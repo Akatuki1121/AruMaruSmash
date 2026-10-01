@@ -14,6 +14,11 @@ public class GameFlowManager : MonoBehaviour
     public WaitingScreenMode WaitingMode { get; private set; } = WaitingScreenMode.OperationGuide;
     public PlayerRegistry Players { get; } = new PlayerRegistry();
 
+    /// <summary>
+    /// フェード中などで true。入力による遷移リクエストを受け付けない
+    /// </summary>
+    public bool IsInputLocked { get; set; }
+
     /// <summary>(遷移前, 遷移後)</summary>
     public event Action<GameState, GameState> OnStateChanged;
     public event Action<WaitingScreenMode> OnWaitingModeChanged;
@@ -80,18 +85,18 @@ public class GameFlowManager : MonoBehaviour
 
     private void BuildTable()
     {
-        // タイトル周り
+        // タイトル周り（T_1 / O_1）
         Add(GameState.Title, GameEvent.Start, GameState.ControllerAssignment, true, null, Players.ResetAssignOk);
         Add(GameState.Title, GameEvent.OpenOption, GameState.Option, true);
-        Add(GameState.Title, GameEvent.Quit, GameState.Quit, true, null, QuitApp);
+        Add(GameState.Title, GameEvent.Quit, GameState.Quit, true);
         Add(GameState.Option, GameEvent.OpenGuide, GameState.OperationGuide, true);
         Add(GameState.Option, GameEvent.OpenSettings, GameState.Settings, true);
         Add(GameState.OperationGuide, GameEvent.Back, GameState.Option, true);
         Add(GameState.Settings, GameEvent.Back, GameState.Option, true);
         Add(GameState.Option, GameEvent.ToTitle, GameState.Title, true);
-        Add(GameState.Option, GameEvent.Quit, GameState.Quit, true, null, QuitApp);
+        Add(GameState.Option, GameEvent.Quit, GameState.Quit, true);
 
-        // ロビー
+        // ロビー（S_1 + 画面遷移図）。キャラ選択 → 待機 → スタート確認 → ゲーム
         Add(GameState.ControllerAssignment, GameEvent.AssignmentAllOk, GameState.CharacterSelect, false,
             () => Players.AllAssigned);
         Add(GameState.ControllerAssignment, GameEvent.ToTitle, GameState.Title, true, null, ExitToTitle);
@@ -126,6 +131,10 @@ public class GameFlowManager : MonoBehaviour
         if (ev == GameEvent.AllPlayersLeft)
         {
             return HandleAllPlayersLeft();
+        }
+        if (IsInputLocked)
+        {
+            return false;
         }
 
         Transition t;
@@ -286,6 +295,9 @@ public class GameFlowManager : MonoBehaviour
         Players.NotifyChanged();
     }
 
+    /// <summary>
+    /// キャラクター(色)を選ぶ。選び直すと準備完了は解除される
+    /// </summary>
     public void SelectCharacter(int slot, int character_id)
     {
         if (State != GameState.CharacterSelect)
@@ -298,6 +310,9 @@ public class GameFlowManager : MonoBehaviour
         Players.NotifyChanged();
     }
 
+    /// <summary>
+    /// 決定ボタン。決定と同時に準備完了状態になる（仕様書 S_1）
+    /// </summary>
     public void ConfirmCharacter(int slot)
     {
         if (State != GameState.CharacterSelect || Players.slots[slot].characterId < 0)
@@ -305,6 +320,19 @@ public class GameFlowManager : MonoBehaviour
             return;
         }
         Players.slots[slot].isCharacterConfirmed = true;
+        Players.NotifyChanged();
+    }
+
+    /// <summary>
+    /// 準備完了のキャンセル（仕様書 S_1: ボタンでキャンセル）
+    /// </summary>
+    public void CancelCharacter(int slot)
+    {
+        if (State != GameState.CharacterSelect)
+        {
+            return;
+        }
+        Players.slots[slot].isCharacterConfirmed = false;
         Players.NotifyChanged();
     }
 
@@ -351,14 +379,5 @@ public class GameFlowManager : MonoBehaviour
     private void ResumeTime()
     {
         Time.timeScale = TIME_SCALE_RUNNING;
-    }
-
-    private void QuitApp()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
     }
 }

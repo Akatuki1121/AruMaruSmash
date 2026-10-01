@@ -139,12 +139,18 @@ public class PlayerRegistry
         NotifyChanged();
     }
 
-    // ---- 一括判定（参加中かつ接続中の全員が対象。0人はfalse） ----
+    // ---- 一括判定（参加中かつ接続中の全員が対象。RequiredPlayers 人未満は false） ----
+
+    /// <summary>
+    /// 先へ進むのに必要な人数。仕様書は「4人準備完了」。
+    /// 1台だけで動作確認したい時は、デバッグ用に 1 へ下げる
+    /// </summary>
+    public int RequiredPlayers { get; set; } = MAX_PLAYERS;
 
     public bool AllActive(Func<PlayerSlot, bool> condition)
     {
         List<PlayerSlot> list = ActivePlayers.ToList();
-        return list.Count > 0 && list.All(condition);
+        return list.Count >= RequiredPlayers && list.All(condition);
     }
 
     public bool AllAssigned

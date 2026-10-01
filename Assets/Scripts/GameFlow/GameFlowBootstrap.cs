@@ -18,8 +18,12 @@ public static class GameFlowBootstrap
 
         GameObject root = new GameObject(ROOT_NAME);
         root.AddComponent<GameFlowManager>();        // Awake で Instance 設定 + DontDestroyOnLoad
+        root.AddComponent<FadeOverlay>();
         root.AddComponent<SceneLoader>();
         root.AddComponent<ControllerConnectionMonitor>();
         root.AddComponent<JoyconConnectionMonitor>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        root.AddComponent<DebugFlowPanel>();         // 仮UI。本UIができたら削除
+#endif
     }
 }
