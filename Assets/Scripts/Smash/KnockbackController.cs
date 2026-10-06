@@ -1,4 +1,6 @@
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Audio;
 
 /// <summary>
 /// プレイヤーのノックバック状態（衝突による吹っ飛び）を管理するクラス。
@@ -67,6 +69,9 @@ public class KnockbackController : MonoBehaviour
 
     public TopDownPlayerMove PlayerMove;
 
+    public AudioClip HitSound;
+    AudioSource audioSource;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -91,6 +96,8 @@ public class KnockbackController : MonoBehaviour
         }
 
         wasGroundedLastFrame = IsGrounded;
+
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Update()
@@ -142,6 +149,7 @@ public class KnockbackController : MonoBehaviour
     /// </summary>
     public void ApplyUpwardBounce(float upForce, bool lockMovement = true)
     {
+        PlayHitSound();
 
         Vector3 v = rb.linearVelocity;
         v.y = upForce;
@@ -151,5 +159,13 @@ public class KnockbackController : MonoBehaviour
         {
             PlayerMove.StartKnockback(0.3f);
         }
+    }
+
+    /// <summary>
+    /// 衝突音
+    /// </summary>
+    public void PlayHitSound()
+    {
+        audioSource.PlayOneShot(HitSound);
     }
 }
