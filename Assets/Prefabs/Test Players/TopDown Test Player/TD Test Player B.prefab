@@ -170,6 +170,7 @@ MonoBehaviour:
   dashSpeedMultiplier: 1
   dashTiltAmount: 0
   joyconIndex: 1
+  IsAttack: 0
 --- !u!114 &7481027891915704389
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,6 +202,7 @@ MonoBehaviour:
   airControlKnockbackThreshold: 0.5
   knockbackDecaySpeed: 4
   stats: {fileID: 0}
+  PlayerMove: {fileID: 9051538524837917794}
 --- !u!114 &8896216646330967084
 MonoBehaviour:
   m_ObjectHideFlags: 0
