@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 仮UI（デバッグ用）。実機のJoy-Conが無くても遷移を確認できる。
@@ -22,7 +23,8 @@ public class DebugFlowPanel : MonoBehaviour
     private void OnGUI()
     {
         GameFlowManager flow = GameFlowManager.Instance;
-        if (flow == null)
+        // テスト用シーンでは出さない（画面遷移の対象シーンだけ）
+        if (flow == null || !SceneLoader.IsFlowScene(SceneManager.GetActiveScene().name))
         {
             return;
         }

@@ -74,6 +74,17 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 画面遷移の対象シーンか。テスト用シーンで仮UIなどを出さないために使う
+    /// </summary>
+    public static bool IsFlowScene(string scene_name)
+    {
+        return scene_name == SCENE_TITLE
+            || scene_name == SCENE_LOBBY
+            || scene_name == SCENE_GAME
+            || scene_name == SCENE_RESULT;
+    }
+
     private void HandleStateChanged(GameState from, GameState to)
     {
         if (to == GameState.Quit)
