@@ -81,7 +81,7 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         Vector3 contactNormal = collision.GetContact(0).normal; // otherからthisへ向かう方向
 
-        
+
         ResolvePlayerCollision(this, other, contactNormal);
 
         // 両者に「直前にぶつかった相手」を記録する
@@ -115,8 +115,8 @@ public class PlayerCollisionHandler : MonoBehaviour
         // 各速度を「法線方向の成分」と「接線方向の成分」に分解する
         float velA_n = Vector3.Dot(velA, normal);
         float velB_n = Vector3.Dot(velB, normal);
-        Vector3 velA_t = velA - normal * velA_n;
-        Vector3 velB_t = velB - normal * velB_n;
+        Vector3 velA_t = velA - (normal * velA_n);
+        Vector3 velB_t = velB - (normal * velB_n);
 
         // 同質量の1次元弾性衝突：法線方向の速度成分を完全に交換するのが物理的に正しい
         float newVelA_n = velB_n;
@@ -148,8 +148,8 @@ public class PlayerCollisionHandler : MonoBehaviour
         newVelA_n = Mathf.Lerp(newVelA_n, velA_n, blendA);
         newVelB_n = Mathf.Lerp(newVelB_n, velB_n, blendB);
 
-        Vector3 resultVelA = velA_t + normal * newVelA_n;
-        Vector3 resultVelB = velB_t + normal * newVelB_n;
+        Vector3 resultVelA = velA_t + (normal * newVelA_n);
+        Vector3 resultVelB = velB_t + (normal * newVelB_n);
 
         a.knockbackController.ApplyKnockback((resultVelA - velA) * a.bounceForceMultiplier);
         b.knockbackController.ApplyKnockback((resultVelB - velB) * a.bounceForceMultiplier);

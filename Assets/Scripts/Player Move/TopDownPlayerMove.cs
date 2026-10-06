@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -120,7 +119,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
         HandleDashInput();
 
-        bool hasInput = (GetTiltX() > 0.2f || GetTiltX() < -0.2f || GetTiltY() > 0.2f || GetTiltY() < -0.2f);
+        bool hasInput = GetTiltX() > 0.2f || GetTiltX() < -0.2f || GetTiltY() > 0.2f || GetTiltY() < -0.2f;
 
         Vector3 currentPhysicalDir = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z).normalized;
 
@@ -180,7 +179,7 @@ public class TopDownPlayerMove : MonoBehaviour
             Vector3 targetVelocity = localMoveDir * speed;
 
             // 足元にレイを飛ばして地面の傾きを検知
-            Ray ray = new Ray(rb.position + Vector3.up * 0.2f, Vector3.down);
+            Ray ray = new(rb.position + (Vector3.up * 0.2f), Vector3.down);
             if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
             {
                 // 地面の斜面に沿うように速度ベクトルを曲げる
@@ -223,7 +222,7 @@ public class TopDownPlayerMove : MonoBehaviour
         if (JoyAccel.x > 0.2f) moveX += 1f;
         if (JoyAccel.x < -0.2f) moveX -= 1f;
 
-        Vector3 inputVector = new Vector3(moveX, 0f, moveZ);
+        Vector3 inputVector = new(moveX, 0f, moveZ);
 
         // 現在の傾き量を計算（0〜1）
         tiltAmount = Mathf.Clamp01(inputVector.magnitude);
@@ -243,7 +242,7 @@ public class TopDownPlayerMove : MonoBehaviour
             tiltAmount = 0f;
         }
     }
-    
+
     private void TryAcquireJoyCon()
     {
         if(joycon != null) return; // すでにJoy-Conを取得済み

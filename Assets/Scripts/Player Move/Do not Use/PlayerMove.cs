@@ -1,7 +1,4 @@
-using NUnit.Framework;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 /// <summary>
 /// Joy-Conの加速度センサーの値を取得して、傾き量を検知するスクリプト。
@@ -76,7 +73,7 @@ public class Player_Move : MonoBehaviour
 
         if (GetTiltY() > 0.2f) moveZ -= 1f;
         if (GetTiltY() < -0.2f) moveZ += 1f;
-        Vector3 inputVector = new Vector3(moveX, moveY, moveZ);   // normalizedで斜め移動が早くなってしまうのを防ぐ
+        Vector3 inputVector = new(moveX, moveY, moveZ);   // normalizedで斜め移動が早くなってしまうのを防ぐ
 
         if (inputVector.sqrMagnitude > 0)
         {

@@ -89,7 +89,7 @@ public class TPSPlayerMove : MonoBehaviour
             Vector3 targetVelocity = localMoveDir * speed;
 
             // 坂道対応
-            Ray ray = new Ray(rb.position + Vector3.up * 0.2f, Vector3.down);
+            Ray ray = new(rb.position + (Vector3.up * 0.2f), Vector3.down);
             if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
             {
                 targetVelocity = Vector3.ProjectOnPlane(targetVelocity, hit.normal);
@@ -120,7 +120,7 @@ public class TPSPlayerMove : MonoBehaviour
         transform.Rotate(0f, rotationInput * rotationSpeed * Time.deltaTime, 0f);
 
         // 移動方向は常に前後（Z軸）の入力のみにする（左右の横入力はしない）
-        Vector3 inputVector = new Vector3(0f, 0f, moveZ);
+        Vector3 inputVector = new(0f, 0f, moveZ);
 
         if (inputVector.sqrMagnitude > 0)
         {
