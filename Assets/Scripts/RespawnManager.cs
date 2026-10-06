@@ -6,6 +6,13 @@ public class RespawnManager: MonoBehaviour
     public GameObject RespawnPoint;
     public GameObject[] Players;
 
+    private void Start()
+    {
+        for (int i = 0;i < Players.Length; i++)
+        {
+            Respawn(i);
+        }
+    }
     void OnTriggerEnter(Collider collider)
     {
         DeathPlayer(collider);

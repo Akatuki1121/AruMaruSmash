@@ -158,10 +158,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
   JoyAccel: {x: 0, y: 0, z: 0}
-  maxSpeed: 20
+  maxSpeed: 40
   currentSpeed: 0
-  brakeSpeed: 8
-  acceleration: 3
+  brakeSpeed: 10
+  acceleration: 4
   stats: {fileID: 0}
   rb: {fileID: 885649622215985095}
   tiltAmount: 0
