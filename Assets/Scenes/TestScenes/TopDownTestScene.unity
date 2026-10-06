@@ -278,15 +278,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5194629390240019780, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -503,15 +503,15 @@ PrefabInstance:
       objectReference: {fileID: 1378850134}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalPosition.x
@@ -877,6 +877,14 @@ PrefabInstance:
     - target: {fileID: 3811734794667288076, guid: e351b4e534bd09c4eabdb09544f751d2, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3811734794667288076, guid: e351b4e534bd09c4eabdb09544f751d2, type: 3}
+      propertyPath: maxTiltAngle
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 3811734794667288076, guid: e351b4e534bd09c4eabdb09544f751d2, type: 3}
+      propertyPath: stabilizationSpeed
+      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
