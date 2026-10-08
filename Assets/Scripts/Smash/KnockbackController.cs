@@ -1,6 +1,4 @@
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Audio;
 
 /// <summary>
 /// プレイヤーのノックバック状態（衝突による吹っ飛び）を管理するクラス。
@@ -8,12 +6,16 @@ using UnityEngine.Audio;
 /// 役割：
 /// - 衝突等で受けたXZ方向の外力（knockbackVelocity）の保持と時間減衰
 /// - 衝突直後の「入力完全ロック」期間の管理
-/// - ロック終了後、空中にいる間だけ入力の効きを弱める「空中制御弱体化」の判定
-/// - Y方向（上向き）の吹っ飛び初速の適用（rb.linearVelocity.yに直接反映、落下は重力に任せる）
+/// - 吹っ飛び状態（着地まで継続）の管理。TopDownPlayerMoveはこの状態を読んで入力を止める
+/// - 吹っ飛び中の重力倍率
+/// - Y方向（上向き）の吹っ飛び初速、XZ速度の直接指定、上向き速度の制限（Rigidbodyへの書き込みはここに集約）
 ///
-/// MoveManagerTestはこのクラスが公開する状態（CurrentKnockbackVelocity, IsLocked,
-/// IsAirControlWeakened, AirControlMultiplier）を読むだけで、
-/// 自分でタイマーやノックバック量を管理する必要がない。
+/// 担当しない処理：
+/// - 衝突の解釈（相手・壁の分類、勝敗）→ PlayerCollisionHandler
+/// - 通常移動・ダッシュ → TopDownPlayerMove
+///
+/// MoveManagerTest（旧移動）はこのクラスが公開する状態（CurrentKnockbackVelocity, IsLocked,
+/// IsAirControlWeakened, AirControlMultiplier）を読むだけで、自分でタイマーやノックバック量を管理する必要がない。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class KnockbackController : MonoBehaviour
@@ -22,43 +24,63 @@ public class KnockbackController : MonoBehaviour
     [Tooltip("接地判定。未設定の場合は同じオブジェクトから自動取得する")]
     public GroundChecker groundChecker;
 
-    private Rigidbody rb;
+    [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
+    public CharacterStats stats;
+
+    // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
+    private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
 
     [Header("衝突後の制御不能時間")]
-    [Tooltip("吹っ飛び・押し負け直後、プレイヤー入力での移動を完全に無効化する時間（秒）")]
-    public float knockbackLockDuration = 0.25f;
-
-    [Header("空中制御弱体化")]
-    [Tooltip("ロック終了後、空中にいる間の入力の効き具合（0=入力無効、1=通常と同じ）")]
-    [Range(0f, 1f)]
-    public float airControlMultiplier = 0.3f;
-
-    [Tooltip("この値以上のノックバック量が残っている間だけ「空中制御弱体化」とみなす")]
-    public float airControlKnockbackThreshold = 0.5f;
+    [Tooltip("吹っ飛び・押し負け直後、プレイヤー入力での移動を完全に無効化する時間（秒）。上げるほど長く操作できない")]
+    public FloatOverride knockbackLockDuration;
 
     [Header("ノックバックの減衰")]
-    [Tooltip("ノックバック速度が時間経過でどれだけ早く0に近づくか")]
-    public float knockbackDecaySpeed = 4f;
+    [Tooltip("ノックバック速度が時間経過で0に近づく早さ。上げるほど早く収まる。下げるほど長く滑る")]
+    public FloatOverride knockbackDecaySpeed;
 
     [Header("吹っ飛び中の落下")]
-    [Tooltip("吹っ飛ばされて着地するまでの間、重力を何倍にするか（1=通常の重力。大きいほど速く落ちる）")]
-    [Min(1f)]
-    public float knockbackGravityMultiplier = 3f;
+    [Tooltip("吹っ飛ばされて着地するまでの間、重力を何倍にするか。1=通常の重力。上げるほど速く落ちる")]
+    public FloatOverride knockbackGravityMultiplier;
 
-    [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
-    public CharacterStats stats;
+    [Header("旧移動スクリプト用（MoveManagerTest）")]
+    [Tooltip("この値以上のノックバック速度が残っている間だけ「空中制御弱体化」とみなす")]
+    public FloatOverride airControlKnockbackThreshold;
+
+    [Header("効果音")]
+    public AudioClip HitSound;
+
+    private float KnockbackLockDuration => knockbackLockDuration.Resolve(Stats.knockbackLockDuration);
+    private float KnockbackDecaySpeed => knockbackDecaySpeed.Resolve(Stats.knockbackDecaySpeed);
+    private float KnockbackGravityMultiplier => knockbackGravityMultiplier.Resolve(Stats.knockbackGravityMultiplier);
+    private float AirControlKnockbackThreshold => airControlKnockbackThreshold.Resolve(Stats.airControlKnockbackThreshold);
+
+    private Rigidbody rb;
+    private AudioSource audioSource;
 
     // 現在保持しているXZ方向のノックバック速度
     private Vector3 knockbackVelocity = Vector3.zero;
     private float knockbackLockTimer = 0f;
 
+    // 吹っ飛び状態：最低限の時間が過ぎたうえで着地するまで継続する
+    private const float KNOCKED_BACK_DURATION = 0.3f;
+    private const float KNOCKED_BACK_MAX_AIR_TIME = 3f;   // 着地を検知できなかった場合の安全弁（秒）
+    private float knockedBackTimer = 0f;
+    private bool knockedAirborne = false;
+
+    // 物理ステップ直前（＝衝突前）のRigidbody速度。ボタン加速中の勝者が「反発しなかった」ことにするために使う
+    private Vector3 preStepVelocity = Vector3.zero;
+
     // 着地検知用：前フレームの接地状態を記憶しておき、非接地→接地に変わった瞬間を捉える
     private bool wasGroundedLastFrame = true;
 
     public Vector3 CurrentKnockbackVelocity => knockbackVelocity;
+    public Vector3 PreStepVelocity => preStepVelocity;
 
     // 接地状態をPlayerCollisionHandler等の外部クラスからも参照できるように公開する
     public bool IsGrounded => groundChecker != null && groundChecker.IsGrounded;
+
+    // 吹っ飛び中（着地するまで）かどうか。TopDownPlayerMoveはこれがtrueの間、入力による移動を止める
+    public bool IsKnockedBack => knockedBackTimer > 0f || knockedAirborne;
 
     // 衝突直後、入力を完全に無視すべき期間中かどうか
     public bool IsLocked => knockbackLockTimer > 0f;
@@ -68,14 +90,10 @@ public class KnockbackController : MonoBehaviour
         !IsLocked &&
         groundChecker != null &&
         !groundChecker.IsGrounded &&
-        knockbackVelocity.sqrMagnitude > airControlKnockbackThreshold * airControlKnockbackThreshold;
+        knockbackVelocity.sqrMagnitude > AirControlKnockbackThreshold * AirControlKnockbackThreshold;
 
-    public float AirControlMultiplier => airControlMultiplier;
-
-    public TopDownPlayerMove PlayerMove;
-
-    public AudioClip HitSound;
-    AudioSource audioSource;
+    // 旧移動スクリプト用。TopDownPlayerMoveの空中制御はTopDownPlayerMove側のairControlMultiplierを使う
+    public float AirControlMultiplier => Stats.airControlMultiplier;
 
     private void Awake()
     {
@@ -84,20 +102,6 @@ public class KnockbackController : MonoBehaviour
         if (groundChecker == null)
         {
             groundChecker = GetComponent<GroundChecker>();
-        }
-
-        if (PlayerMove == null)
-        {
-            PlayerMove = GetComponent<TopDownPlayerMove>();
-        }
-
-        // statsが設定されている場合のみ、Inspectorの初期値をSOの値で上書きする
-        if (stats != null)
-        {
-            knockbackLockDuration = stats.knockbackLockDuration;
-            airControlMultiplier = stats.airControlMultiplier;
-            airControlKnockbackThreshold = stats.airControlKnockbackThreshold;
-            knockbackDecaySpeed = stats.knockbackDecaySpeed;
         }
 
         wasGroundedLastFrame = IsGrounded;
@@ -119,6 +123,19 @@ public class KnockbackController : MonoBehaviour
             knockbackLockTimer = 0f;
         }
         wasGroundedLastFrame = isGroundedNow;
+
+        // 吹っ飛び状態：最低限の時間が過ぎたうえで着地したら終了する
+        // （着地を検知できない場合でも、安全弁の時間を超えたら終了する）
+        if (knockedAirborne && knockedBackTimer <= 0f &&
+            (isGroundedNow || knockedBackTimer < -KNOCKED_BACK_MAX_AIR_TIME))
+        {
+            knockedAirborne = false;
+        }
+
+        if (IsKnockedBack)
+        {
+            knockedBackTimer -= Time.deltaTime;
+        }
     }
 
     /// <summary>
@@ -127,16 +144,13 @@ public class KnockbackController : MonoBehaviour
     /// </summary>
     private void ApplyKnockbackGravity()
     {
-        if (knockbackGravityMultiplier <= 1f) return;
-        if (PlayerMove == null || !PlayerMove.IsKnockedBack) return;
+        float multiplier = KnockbackGravityMultiplier;
+        if (multiplier <= 1f) return;
+        if (!IsKnockedBack) return;
         if (IsGrounded) return;
 
-        rb.AddForce(Physics.gravity * (knockbackGravityMultiplier - 1f), ForceMode.Acceleration);
+        rb.AddForce(Physics.gravity * (multiplier - 1f), ForceMode.Acceleration);
     }
-
-    // 物理ステップ直前（＝衝突前）のRigidbody速度。ボタン加速中の勝者が「反発しなかった」ことにするために使う
-    private Vector3 preStepVelocity = Vector3.zero;
-    public Vector3 PreStepVelocity => preStepVelocity;
 
     private void FixedUpdate()
     {
@@ -148,7 +162,7 @@ public class KnockbackController : MonoBehaviour
         // ノックバック速度の時間減衰（XZ方向のみ。Y方向の落下は重力に任せる）
         if (knockbackVelocity.sqrMagnitude > 0.01f)
         {
-            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.fixedDeltaTime * knockbackDecaySpeed);
+            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.fixedDeltaTime * KnockbackDecaySpeed);
         }
         else
         {
@@ -158,18 +172,28 @@ public class KnockbackController : MonoBehaviour
 
     /// <summary>
     /// XZ方向の外力をノックバック速度に加算し、入力ロック時間をリセットする。
-    /// forceKnockback=trueなら、加速中（IsAttack）でも必ずロックする（加速中の勝敗で負けた側に使う）。
     /// </summary>
-    public void ApplyKnockback(Vector3 horizontalForce, bool forceKnockback = false)
+    public void ApplyKnockback(Vector3 horizontalForce)
     {
         horizontalForce.y = 0f;
         knockbackVelocity += horizontalForce;
+        knockbackLockTimer = KnockbackLockDuration;
+    }
 
-        if (forceKnockback || !PlayerMove.IsAttack)
-        {
+    /// <summary>
+    /// Y方向（上向き）の吹っ飛び初速を与え、吹っ飛び状態（着地まで継続）にする。
+    /// 落下は重力に任せるため、ここでは初速の代入のみ行う。
+    /// </summary>
+    public void ApplyUpwardBounce(float upForce)
+    {
+        PlayHitSound();
 
-            knockbackLockTimer = knockbackLockDuration;
-        }
+        Vector3 v = rb.linearVelocity;
+        v.y = upForce;
+        rb.linearVelocity = v;
+
+        knockedBackTimer = KNOCKED_BACK_DURATION;
+        knockedAirborne = true;
     }
 
     /// <summary>
@@ -190,21 +214,19 @@ public class KnockbackController : MonoBehaviour
     }
 
     /// <summary>
-    /// Y方向（上向き）の吹っ飛び初速を与える。落下は重力に任せるため、ここでは初速の代入のみ行う。
-    /// forceKnockback=trueなら、加速中（IsAttack）でも必ず吹っ飛び状態（入力ロック）にする。
+    /// 上向きの速度をmaxUpwardSpeed以下に制限する。壁に当たって上へ飛ぶのを防ぐために使う。
+    /// 制限前の上向き速度を返す（制限が不要だった場合もその値を返す）。
     /// </summary>
-    public void ApplyUpwardBounce(float upForce, bool lockMovement = true, bool forceKnockback = false)
+    public float LimitUpwardVelocity(float maxUpwardSpeed)
     {
-        PlayHitSound();
-
         Vector3 v = rb.linearVelocity;
-        v.y = upForce;
-        rb.linearVelocity = v;
-
-        if (PlayerMove != null && (forceKnockback || !PlayerMove.IsAttack))
+        float before = v.y;
+        if (before > maxUpwardSpeed)
         {
-            PlayerMove.StartKnockback(0.3f);
+            v.y = maxUpwardSpeed;
+            rb.linearVelocity = v;
         }
+        return before;
     }
 
     /// <summary>
@@ -212,6 +234,9 @@ public class KnockbackController : MonoBehaviour
     /// </summary>
     public void PlayHitSound()
     {
-        audioSource.PlayOneShot(HitSound);
+        if (audioSource != null && HitSound != null)
+        {
+            audioSource.PlayOneShot(HitSound);
+        }
     }
 }

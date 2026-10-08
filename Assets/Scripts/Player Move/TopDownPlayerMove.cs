@@ -69,11 +69,10 @@ public class TopDownPlayerMove : MonoBehaviour
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
     private Joycon joycon; // 接続されているJoy-Con本体への参照
 
-    private float knockbackTimer = 0f;
-    private bool knockedAirborne = false;                 // 吹っ飛ばされて着地するまでの間true
-    private KnockbackController knockback;                // 着地判定の参照用
-    private const float KNOCKBACK_MAX_AIR_TIME = 3f;      // 着地を検知できなかった場合の安全弁（秒）
-    public bool IsKnockedBack => knockbackTimer > 0f || knockedAirborne;   // ノックバック中フラグ（着地まで継続）
+    private GroundChecker ground;                         // 接地判定の参照用
+    private KnockbackController knockback;                // 吹っ飛び状態の参照用（吹っ飛び状態の管理はKnockbackController側）
+    private bool wasKnockedBack = false;                  // 吹っ飛び開始の瞬間を検知するための前フレームの状態
+    public bool IsKnockedBack => knockback != null && knockback.IsKnockedBack;   // ノックバック中フラグ（着地まで継続）
 
     public bool IsAttack;   // 攻撃フラグ
 
@@ -91,7 +90,8 @@ public class TopDownPlayerMove : MonoBehaviour
 
         // 移動・ダッシュ・空中制御の値は、上のFloatOverride経由でCharacterStats（またはその上書き）から都度取得する
 
-        // 着地判定用にKnockbackControllerを取得しておく
+        // 接地判定と吹っ飛び状態の参照を取得しておく
+        ground = GetComponent<GroundChecker>();
         knockback = GetComponent<KnockbackController>();
 
         // Joy-Conの接続を試みる
@@ -104,19 +104,19 @@ public class TopDownPlayerMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // 吹っ飛び中：最低限のロック時間が過ぎたうえで着地したら、通常操作に復帰する
-        // （着地を検知できない場合でも、安全弁の時間を超えたら復帰する）
-        if (knockedAirborne && knockbackTimer <= 0f &&
-            (knockback == null || knockback.IsGrounded || knockbackTimer < -KNOCKBACK_MAX_AIR_TIME))
-        {
-            knockedAirborne = false;
-        }
-
+        // 吹っ飛び中は入力による移動を止める。吹っ飛びが始まった瞬間だけ、移動の状態をリセットする
+        // （吹っ飛び状態の終了判定はKnockbackController側で行う）
         if (IsKnockedBack)
         {
-            knockbackTimer -= Time.deltaTime;
+            if (!wasKnockedBack)
+            {
+                currentSpeed = 0f;
+                moveDirection = Vector3.zero;
+            }
+            wasKnockedBack = true;
             return;
         }
+        wasKnockedBack = false;
 
         if (JoyconManager.Instance != null && JoyconManager.Instance.j != null)
         {
@@ -191,7 +191,7 @@ public class TopDownPlayerMove : MonoBehaviour
     {
         // 空中（接地していない）間は、入力による水平速度の変更を airControlMultiplier 分だけに絞る。
         // 0のときはXZ速度に一切触れず、そのまま慣性で飛ぶ（入力なしでXZ速度を0にする処理も行わない）。
-        bool isAirborne = knockback != null && !knockback.IsGrounded;
+        bool isAirborne = ground != null && !ground.IsGrounded;
         float control = isAirborne ? AirControlMultiplier : 1f;
         if (control <= 0f) return;
 
@@ -292,9 +292,10 @@ public class TopDownPlayerMove : MonoBehaviour
         return JoyAccel.y;
     }
 
-    // 現在速度と入力方向を掛け合わせた移動ベクトルを返す
+    // 現在速度と入力方向を掛け合わせた移動ベクトルを返す（吹っ飛び中は入力由来の移動なし）
     public Vector3 GetInputMoveVelocity()
     {
+        if (IsKnockedBack) return Vector3.zero;
         return moveDirection * currentSpeed;
     }
 
@@ -359,13 +360,5 @@ public class TopDownPlayerMove : MonoBehaviour
         }
 
         dashTiltAmount = Mathf.Clamp01(dashTiltAmount);
-    }
-
-    public void StartKnockback(float duation)
-    {
-        knockbackTimer = duation;
-        knockedAirborne = true;   // 着地するまで入力による速度の上書きを止める
-        currentSpeed = 0f;
-        moveDirection = Vector3.zero;
     }
 }
