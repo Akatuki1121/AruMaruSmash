@@ -17,6 +17,12 @@ public class TopDownPlayerMove : MonoBehaviour
     public float brakeSpeed = 5f;     // 減速（ブレーキ）速度
     public float acceleration = 2f;   // 加速速度
 
+    [Header("空中制御")]
+    [Tooltip("空中（接地していない間）の入力の効き具合。0=空中では入力で動けない（慣性のまま飛ぶ）/ 1=地上と同じ。" +
+             "吹っ飛び中は別途ロックされるため、ここは歩いて落ちたときなどの通常移動中の空中に適用される。")]
+    [Range(0f, 1f)]
+    public float airControlMultiplier = 0f;
+
     [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
     public CharacterStats stats;
 
@@ -72,6 +78,7 @@ public class TopDownPlayerMove : MonoBehaviour
             maxSpeed = stats.maxSpeed;
             acceleration = stats.acceleration;
             brakeSpeed = stats.brakeSpeed;
+            airControlMultiplier = stats.airControlMultiplier;
         }
 
         // 着地判定用にKnockbackControllerを取得しておく
@@ -172,6 +179,12 @@ public class TopDownPlayerMove : MonoBehaviour
 
     public void PlayerMove(float speed)
     {
+        // 空中（接地していない）間は、入力による水平速度の変更を airControlMultiplier 分だけに絞る。
+        // 0のときはXZ速度に一切触れず、そのまま慣性で飛ぶ（入力なしでXZ速度を0にする処理も行わない）。
+        bool isAirborne = knockback != null && !knockback.IsGrounded;
+        float control = isAirborne ? airControlMultiplier : 1f;
+        if (control <= 0f) return;
+
         if (moveDirection.sqrMagnitude > 0 && speed > 0.01f)
         {
             // 入力方向をワールド座標に変換
@@ -186,13 +199,17 @@ public class TopDownPlayerMove : MonoBehaviour
                 targetVelocity = Vector3.ProjectOnPlane(targetVelocity, hit.normal);
             }
 
-            // XZ方向の速度を設定（Y方向の速度はそのままにする）
-            rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
+            // XZ方向の速度を設定（Y方向の速度はそのままにする）。空中では現在速度から目標速度へcontrol分だけ近づける
+            Vector3 currentXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            Vector3 newXZ = Vector3.Lerp(currentXZ, new Vector3(targetVelocity.x, 0f, targetVelocity.z), control);
+            rb.linearVelocity = new Vector3(newXZ.x, rb.linearVelocity.y, newXZ.z);
         }
         else
         {
-            // 入力がない場合、XZ方向の速度をゼロにする（Y方向の速度はそのままにする）
-            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            // 入力がない場合、XZ方向の速度をゼロにする（Y方向の速度はそのままにする）。空中ではcontrol分だけ減速
+            Vector3 currentXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            Vector3 newXZ = Vector3.Lerp(currentXZ, Vector3.zero, control);
+            rb.linearVelocity = new Vector3(newXZ.x, rb.linearVelocity.y, newXZ.z);
         }
     }
 
