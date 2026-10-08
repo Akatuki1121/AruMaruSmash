@@ -18,6 +18,7 @@ public class PlayerCollisionHandler : MonoBehaviour
     private MoveManagerTest moveManager;      // 旧移動スクリプト（無くても動く）
     private TopDownPlayerMove topDownMove;    // 実際の移動スクリプト
     private KnockbackController knockbackController;
+    private Rigidbody rb;
 
     [Header("衝突反応（同質量の弾性衝突ベース）")]
     [Tooltip("0=完全に物理的な弾性衝突（法線成分を均等にSwap）/ 1=強い方は法線速度をほぼ変えず弱い方だけが強く飛ぶ（ゲーム的な非対称調整）")]
@@ -42,6 +43,18 @@ public class PlayerCollisionHandler : MonoBehaviour
              "壁やギミックなど、PlayerCollisionHandlerを持たない相手との衝突には影響しない。")]
     public float sameTargetCooldown = 0.4f;
 
+    [Header("壁との衝突")]
+    [Tooltip("接触面の法線のY成分の絶対値がこの値未満なら「壁」とみなす（0=完全に垂直な面のみ、大きいほど傾いた面も壁扱い）")]
+    [Range(0f, 1f)]
+    public float wallNormalYThreshold = 0.5f;
+
+    [Tooltip("壁に接触している間、上向きの速度をこの値までに制限する（0=壁に当たっても上へは飛ばない）")]
+    [Min(0f)]
+    public float wallMaxUpwardSpeed = 0f;
+
+    [Tooltip("壁との接触で上向き速度を抑えたときにログを出す（原因調査用）")]
+    public bool logWallContacts = false;
+
     // 直前にぶつかった相手とその時刻（ペアごとの無敵時間判定に使用）
     private PlayerCollisionHandler lastHitOther = null;
     private float lastHitTime = -999f;
@@ -54,6 +67,7 @@ public class PlayerCollisionHandler : MonoBehaviour
         moveManager = GetComponent<MoveManagerTest>();
         topDownMove = GetComponent<TopDownPlayerMove>();
         knockbackController = GetComponent<KnockbackController>();
+        rb = GetComponent<Rigidbody>();
         wasGroundedLastFrame = knockbackController.IsGrounded;
     }
 
@@ -71,7 +85,12 @@ public class PlayerCollisionHandler : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         PlayerCollisionHandler other = collision.collider.GetComponent<PlayerCollisionHandler>();
-        if (other == null) return; // 壁・ギミック等、プレイヤーでない相手は無条件で無視（このクラスの対象外）
+        if (other == null)
+        {
+            // 壁・ギミック等、プレイヤーでない相手：プレイヤー同士の衝突処理の対象外。壁に当たって上へ飛ぶ現象だけ抑える
+            SuppressUpwardVelocityAgainstWall(collision);
+            return;
+        }
 
         // 同じ相手と直前にぶつかっていて、まだ無敵時間内なら無視する
         if (lastHitOther == other && Time.time - lastHitTime < sameTargetCooldown) return;
@@ -89,6 +108,40 @@ public class PlayerCollisionHandler : MonoBehaviour
         lastHitTime = Time.time;
         other.lastHitOther = this;
         other.lastHitTime = Time.time;
+    }
+
+    // 壁に接触し続けている間も上向き速度を抑える（Enterだけだと、押し付け中に再び上へ押し出されるため）
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.collider.GetComponent<PlayerCollisionHandler>() != null) return;
+        SuppressUpwardVelocityAgainstWall(collision);
+    }
+
+    // 壁（ほぼ垂直な面）に接触している間、上向きの速度を抑える。
+    // 床や緩い坂（法線のYが大きい面）は対象外なので、通常の接地・坂の移動には影響しない。
+    private void SuppressUpwardVelocityAgainstWall(Collision collision)
+    {
+        bool touchingWall = false;
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            if (Mathf.Abs(collision.GetContact(i).normal.y) < wallNormalYThreshold)
+            {
+                touchingWall = true;
+                break;
+            }
+        }
+        if (!touchingWall) return;
+
+        Vector3 velocity = rb.linearVelocity;
+        if (velocity.y <= wallMaxUpwardSpeed) return;
+
+        if (logWallContacts)
+        {
+            Debug.Log($"{name}: 壁接触で上向き速度を抑制 y={velocity.y:F2} → {wallMaxUpwardSpeed:F2} / 相手={collision.collider.name} / 法線={collision.GetContact(0).normal}");
+        }
+
+        velocity.y = wallMaxUpwardSpeed;
+        rb.linearVelocity = velocity;
     }
 
     // 衝突計算に使う「入力由来のXZ移動速度」。実際に動かしているTopDownPlayerMoveを優先し、
