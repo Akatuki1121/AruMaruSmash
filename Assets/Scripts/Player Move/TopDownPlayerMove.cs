@@ -8,7 +8,6 @@ using UnityEngine.InputSystem;
 
 public class TopDownPlayerMove : MonoBehaviour
 {
-    JoyconAccelReceiver JoyAccelRec;
     public Vector3 JoyAccel;
 
     [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
@@ -38,7 +37,7 @@ public class TopDownPlayerMove : MonoBehaviour
     private float GroundMoveSpeed => groundMoveSpeed.Resolve(Stats.maxSpeed);
     private float GroundAcceleration => groundAcceleration.Resolve(Stats.acceleration);
     private float GroundDeceleration => groundDeceleration.Resolve(Stats.brakeSpeed);
-    private float AirControlMultiplier => Mathf.Clamp01(airControlMultiplier.Resolve(Stats.airControlMultiplier));
+    public float AirControlMultiplier => Mathf.Clamp01(airControlMultiplier.Resolve(Stats.airControlMultiplier));
 
     private Vector3 moveDirection = Vector3.zero;
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
@@ -69,7 +68,6 @@ public class TopDownPlayerMove : MonoBehaviour
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
     private Joycon joycon; // 接続されているJoy-Con本体への参照
 
-    private GroundChecker ground;                         // 接地判定の参照用
     private KnockbackController knockback;                // 吹っ飛び状態の参照用（吹っ飛び状態の管理はKnockbackController側）
     private bool wasKnockedBack = false;                  // 吹っ飛び開始の瞬間を検知するための前フレームの状態
     public bool IsKnockedBack => knockback != null && knockback.IsKnockedBack;   // ノックバック中フラグ（着地まで継続）
@@ -79,10 +77,6 @@ public class TopDownPlayerMove : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        //if (JoyAccelRec == null)
-        //{
-        //    JoyAccelRec = GetComponent<JoyconAccelReceiver>();
-        //}
         if (rb == null)
         {
             rb = GetComponent<Rigidbody>();
@@ -90,8 +84,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
         // 移動・ダッシュ・空中制御の値は、上のFloatOverride経由でCharacterStats（またはその上書き）から都度取得する
 
-        // 接地判定と吹っ飛び状態の参照を取得しておく
-        ground = GetComponent<GroundChecker>();
+        // 吹っ飛び状態の参照を取得しておく
         knockback = GetComponent<KnockbackController>();
 
         // Joy-Conの接続を試みる
@@ -104,6 +97,8 @@ public class TopDownPlayerMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        TryAcquireJoyCon();
+
         // 吹っ飛び中は入力による移動を止める。吹っ飛びが始まった瞬間だけ、移動の状態をリセットする
         // （吹っ飛び状態の終了判定はKnockbackController側で行う）
         if (IsKnockedBack)
@@ -138,12 +133,10 @@ public class TopDownPlayerMove : MonoBehaviour
 
         bool hasInput = GetTiltX() > 0.2f || GetTiltX() < -0.2f || GetTiltY() > 0.2f || GetTiltY() < -0.2f;
 
-        Vector3 currentPhysicalDir = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z).normalized;
-
         if (hasInput)
         {
             // 前回の移動方向と現在の移動方向が逆向きの場合、減速する
-            if (currentSpeed > 0.1f && Vector3.Dot(oldDir, moveDirection) < -0.1f && Vector3.Dot(oldDir, moveDirection) < -0.1f)
+            if (currentSpeed > 0.1f && Vector3.Dot(oldDir, moveDirection) < -0.1f)
             {
                 currentSpeed -= GroundDeceleration * Time.deltaTime;
                 currentSpeed = Mathf.Max(currentSpeed, 0f);
@@ -152,8 +145,7 @@ public class TopDownPlayerMove : MonoBehaviour
             }
             else
             {
-                float speedBoostFactor = 1.0f + (dashTiltAmount * DashSpeedMultiplier);
-                float targetMaxSpeed = GroundMoveSpeed * tiltAmount * speedBoostFactor;
+                float targetMaxSpeed = GroundMoveSpeed * tiltAmount;
 
                 currentSpeed += targetMaxSpeed * GroundAcceleration * Time.deltaTime;
                 currentSpeed = Mathf.Min(currentSpeed, targetMaxSpeed);
@@ -161,65 +153,19 @@ public class TopDownPlayerMove : MonoBehaviour
         }
         else
         {
-            // 入力が無いときは、現在の速度が0より大きい場合にのみ加速する
+            // 入力が無いときは、現在の速度が0より大きい場合に減速する
             if (currentSpeed > 0.01f)
             {
                 currentSpeed -= GroundDeceleration * Time.deltaTime;
                 currentSpeed = Mathf.Max(currentSpeed, 0f);
 
-                // 入力がない場合でも、現在の物理的な移動方向を維持する
-                if (currentPhysicalDir.sqrMagnitude > 0)
-                {
-                    moveDirection = currentPhysicalDir;
-                }
+                // 入力がない場合も、直前の移動方向を維持して減速する
             }
             else
             {
                 currentSpeed = 0f;
                 moveDirection = Vector3.zero; // 入力がない場合は方向をリセット
             }
-        }
-    }
-
-    private void FixedUpdate()
-    {
-        if (IsKnockedBack) return;
-        PlayerMove(currentSpeed);
-    }
-
-    public void PlayerMove(float speed)
-    {
-        // 空中（接地していない）間は、入力による水平速度の変更を airControlMultiplier 分だけに絞る。
-        // 0のときはXZ速度に一切触れず、そのまま慣性で飛ぶ（入力なしでXZ速度を0にする処理も行わない）。
-        bool isAirborne = ground != null && !ground.IsGrounded;
-        float control = isAirborne ? AirControlMultiplier : 1f;
-        if (control <= 0f) return;
-
-        if (moveDirection.sqrMagnitude > 0 && speed > 0.01f)
-        {
-            // 入力方向をワールド座標に変換
-            Vector3 localMoveDir = transform.rotation * moveDirection;
-            Vector3 targetVelocity = localMoveDir * speed;
-
-            // 足元にレイを飛ばして地面の傾きを検知
-            Ray ray = new(rb.position + (Vector3.up * 0.2f), Vector3.down);
-            if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
-            {
-                // 地面の斜面に沿うように速度ベクトルを曲げる
-                targetVelocity = Vector3.ProjectOnPlane(targetVelocity, hit.normal);
-            }
-
-            // XZ方向の速度を設定（Y方向の速度はそのままにする）。空中では現在速度から目標速度へcontrol分だけ近づける
-            Vector3 currentXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            Vector3 newXZ = Vector3.Lerp(currentXZ, new Vector3(targetVelocity.x, 0f, targetVelocity.z), control);
-            rb.linearVelocity = new Vector3(newXZ.x, rb.linearVelocity.y, newXZ.z);
-        }
-        else
-        {
-            // 入力がない場合、XZ方向の速度をゼロにする（Y方向の速度はそのままにする）。空中ではcontrol分だけ減速
-            Vector3 currentXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            Vector3 newXZ = Vector3.Lerp(currentXZ, Vector3.zero, control);
-            rb.linearVelocity = new Vector3(newXZ.x, rb.linearVelocity.y, newXZ.z);
         }
     }
 
@@ -292,17 +238,42 @@ public class TopDownPlayerMove : MonoBehaviour
         return JoyAccel.y;
     }
 
-    // 現在速度と入力方向を掛け合わせた移動ベクトルを返す（吹っ飛び中は入力由来の移動なし）
-    public Vector3 GetInputMoveVelocity()
+    // 通常移動速度を返す（吹っ飛び中は入力由来の移動なし）
+    public Vector3 GetNormalMoveVelocity()
     {
         if (IsKnockedBack) return Vector3.zero;
-        return moveDirection * currentSpeed;
+        return GetWorldMoveDirection() * currentSpeed;
+    }
+
+    // ダッシュによる追加速度を返す
+    public Vector3 GetDashVelocity()
+    {
+        if (IsKnockedBack) return Vector3.zero;
+        return GetWorldMoveDirection() * (currentSpeed * dashTiltAmount * DashSpeedMultiplier);
+    }
+
+    // 通常移動とダッシュを合わせた入力由来の移動ベクトル
+    public Vector3 GetInputMoveVelocity()
+    {
+        return GetNormalMoveVelocity() + GetDashVelocity();
+    }
+
+    private Vector3 GetWorldMoveDirection()
+    {
+        if (moveDirection.sqrMagnitude <= 0f) return Vector3.zero;
+
+        Vector3 direction = transform.rotation * moveDirection;
+        Ray ray = new(rb.position + (Vector3.up * 0.2f), Vector3.down);
+        if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
+        {
+            direction = Vector3.ProjectOnPlane(direction, hit.normal);
+        }
+
+        return direction;
     }
 
     public void HandleDashInput()
     {
-        //TryAcquireJoyCon();
-
         bool isDashButtonDown = false;
         bool isDashButtonHeld = false;
 
