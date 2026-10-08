@@ -153,6 +153,46 @@ public class PlayerCollisionHandler : MonoBehaviour
         return Vector3.zero;
     }
 
+    // ボタン加速中の勝敗判定。必ずどちらかを勝者にする。
+    // 1. 実際の速さが大きい方が勝つ  2. 同速なら加速中の側が勝つ  3. それでも決まらなければ（両者加速中など）ランダム
+    private static bool DecideAttackWinner(float speedA, float speedB, bool aAttack, bool bAttack)
+    {
+        const float TIE_EPSILON = 0.0001f;
+        float diff = speedA - speedB;
+        if (Mathf.Abs(diff) > TIE_EPSILON) return diff > 0f;
+        if (aAttack != bAttack) return aAttack;
+        return Random.value < 0.5f;
+    }
+
+    // ボタン加速中の衝突処理。勝者は衝突前の速度に戻して反発させず、敗者だけが勝者の法線速度を受け取って吹っ飛ぶ。
+    // 敗者は加速中でも必ず吹っ飛び状態（入力ロック）にする。
+    private static void ResolveAttackCollision(PlayerCollisionHandler a, PlayerCollisionHandler b, Vector3 normal,
+                                               Vector3 velA, Vector3 velB, bool aAttack, bool bAttack)
+    {
+        bool aWins = DecideAttackWinner(velA.magnitude, velB.magnitude, aAttack, bAttack);
+        PlayerCollisionHandler winner = aWins ? a : b;
+        PlayerCollisionHandler loser = aWins ? b : a;
+        Vector3 winnerVel = aWins ? velA : velB;
+        Vector3 loserVel = aWins ? velB : velA;
+
+        float winnerN = Vector3.Dot(winnerVel, normal);
+        float loserN = Vector3.Dot(loserVel, normal);
+
+        // 敗者の法線速度を勝者の法線速度に置き換える（接線方向はそのまま）
+        Vector3 loserResult = (loserVel - normal * loserN) + normal * winnerN;
+        Vector3 loserDelta = (loserResult - loserVel) * a.bounceForceMultiplier;
+
+        winner.knockbackController.RestoreHorizontalVelocity();
+
+        Vector3 loserPreStep = loser.knockbackController.PreStepVelocity;
+        loser.knockbackController.ApplyKnockback(loserDelta, true);
+        loser.knockbackController.SetHorizontalVelocity(new Vector3(loserPreStep.x, 0f, loserPreStep.z) + loserDelta);
+
+        float closingSpeed = Mathf.Abs(Vector3.Dot(velA, normal) - Vector3.Dot(velB, normal));
+        float upForce = Mathf.Clamp(closingSpeed * a.upwardForcePerSpeed, a.minUpwardForce, a.maxUpwardForce);
+        loser.knockbackController.ApplyUpwardBounce(upForce, true, true);
+    }
+
     private static void ResolvePlayerCollision(PlayerCollisionHandler a, PlayerCollisionHandler b, Vector3 normalBtoA)
     {
         // 衝突法線（水平面のみで計算。立体的な乗り上げ等は無視する）
@@ -170,6 +210,15 @@ public class PlayerCollisionHandler : MonoBehaviour
         float velB_n = Vector3.Dot(velB, normal);
         Vector3 velA_t = velA - (normal * velA_n);
         Vector3 velB_t = velB - (normal * velB_n);
+
+        // ボタン加速中の衝突は、必ず勝敗を決める（勝者は反発せず、敗者だけが吹っ飛ぶ）
+        bool aAttack = a.topDownMove != null && a.topDownMove.IsAttack;
+        bool bAttack = b.topDownMove != null && b.topDownMove.IsAttack;
+        if (aAttack || bAttack)
+        {
+            ResolveAttackCollision(a, b, normal, velA, velB, aAttack, bAttack);
+            return;
+        }
 
         // 同質量の1次元弾性衝突：法線方向の速度成分を完全に交換するのが物理的に正しい
         float newVelA_n = velB_n;

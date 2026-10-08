@@ -134,8 +134,14 @@ public class KnockbackController : MonoBehaviour
         rb.AddForce(Physics.gravity * (knockbackGravityMultiplier - 1f), ForceMode.Acceleration);
     }
 
+    // 物理ステップ直前（＝衝突前）のRigidbody速度。ボタン加速中の勝者が「反発しなかった」ことにするために使う
+    private Vector3 preStepVelocity = Vector3.zero;
+    public Vector3 PreStepVelocity => preStepVelocity;
+
     private void FixedUpdate()
     {
+        preStepVelocity = rb.linearVelocity;
+
         // 吹っ飛び中（着地するまで）は重力を強めて落下を速くする
         ApplyKnockbackGravity();
 
@@ -152,13 +158,14 @@ public class KnockbackController : MonoBehaviour
 
     /// <summary>
     /// XZ方向の外力をノックバック速度に加算し、入力ロック時間をリセットする。
+    /// forceKnockback=trueなら、加速中（IsAttack）でも必ずロックする（加速中の勝敗で負けた側に使う）。
     /// </summary>
-    public void ApplyKnockback(Vector3 horizontalForce)
+    public void ApplyKnockback(Vector3 horizontalForce, bool forceKnockback = false)
     {
         horizontalForce.y = 0f;
         knockbackVelocity += horizontalForce;
 
-        if (!PlayerMove.IsAttack)
+        if (forceKnockback || !PlayerMove.IsAttack)
         {
 
             knockbackLockTimer = knockbackLockDuration;
@@ -166,9 +173,27 @@ public class KnockbackController : MonoBehaviour
     }
 
     /// <summary>
-    /// Y方向（上向き）の吹っ飛び初速を与える。落下は重力に任せるため、ここでは初速の代入のみ行う。
+    /// RigidbodyのXZ速度を直接指定する（Y速度は保持）。加速中の勝敗の結果を反映するために使う。
     /// </summary>
-    public void ApplyUpwardBounce(float upForce, bool lockMovement = true)
+    public void SetHorizontalVelocity(Vector3 horizontalVelocity)
+    {
+        Vector3 v = rb.linearVelocity;
+        rb.linearVelocity = new Vector3(horizontalVelocity.x, v.y, horizontalVelocity.z);
+    }
+
+    /// <summary>
+    /// XZ速度を衝突前（直前の物理ステップ開始時）の値に戻す。勝者が「反発しなかった」状態にするために使う。
+    /// </summary>
+    public void RestoreHorizontalVelocity()
+    {
+        SetHorizontalVelocity(preStepVelocity);
+    }
+
+    /// <summary>
+    /// Y方向（上向き）の吹っ飛び初速を与える。落下は重力に任せるため、ここでは初速の代入のみ行う。
+    /// forceKnockback=trueなら、加速中（IsAttack）でも必ず吹っ飛び状態（入力ロック）にする。
+    /// </summary>
+    public void ApplyUpwardBounce(float upForce, bool lockMovement = true, bool forceKnockback = false)
     {
         PlayHitSound();
 
@@ -176,7 +201,7 @@ public class KnockbackController : MonoBehaviour
         v.y = upForce;
         rb.linearVelocity = v;
 
-        if (PlayerMove != null && !PlayerMove.IsAttack)
+        if (PlayerMove != null && (forceKnockback || !PlayerMove.IsAttack))
         {
             PlayerMove.StartKnockback(0.3f);
         }
