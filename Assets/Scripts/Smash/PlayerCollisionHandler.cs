@@ -13,8 +13,6 @@ using UnityEngine;
 ///   （壁・ギミック等、PlayerCollisionHandlerを持たない相手との衝突はこの対象外）
 /// - 壁（ほぼ垂直な面）の判定と、壁に当たったときの上向き速度の制限の要求
 ///
-/// 担当しない処理：
-/// - Rigidbodyの速度の書き込み、ノックバックの継続管理 → KnockbackController
 /// </summary>
 [RequireComponent(typeof(KnockbackController))]
 public class PlayerCollisionHandler : MonoBehaviour
@@ -186,7 +184,6 @@ public class PlayerCollisionHandler : MonoBehaviour
                                                Vector3 velA, Vector3 velB, bool aAttack, bool bAttack)
     {
         bool aWins = DecideAttackWinner(velA.magnitude, velB.magnitude, aAttack, bAttack);
-        PlayerCollisionHandler winner = aWins ? a : b;
         PlayerCollisionHandler loser = aWins ? b : a;
         Vector3 winnerVel = aWins ? velA : velB;
         Vector3 loserVel = aWins ? velB : velA;
@@ -195,14 +192,10 @@ public class PlayerCollisionHandler : MonoBehaviour
         float loserN = Vector3.Dot(loserVel, normal);
 
         // 敗者の法線速度を勝者の法線速度に置き換える（接線方向はそのまま）
-        Vector3 loserResult = (loserVel - normal * loserN) + normal * winnerN;
+        Vector3 loserResult = loserVel - (normal * loserN) + (normal * winnerN);
         Vector3 loserDelta = (loserResult - loserVel) * a.BounceForceMultiplier;
 
-        winner.knockbackController.RestoreHorizontalVelocity();
-
-        Vector3 loserPreStep = loser.knockbackController.PreStepVelocity;
         loser.knockbackController.ApplyKnockback(loserDelta);
-        loser.knockbackController.SetHorizontalVelocity(new Vector3(loserPreStep.x, 0f, loserPreStep.z) + loserDelta);
 
         float closingSpeed = Mathf.Abs(Vector3.Dot(velA, normal) - Vector3.Dot(velB, normal));
         float upForce = Mathf.Clamp(closingSpeed * a.UpwardForcePerSpeed, a.MinUpwardForce, a.MaxUpwardForce);

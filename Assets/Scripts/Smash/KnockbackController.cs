@@ -4,18 +4,13 @@ using UnityEngine;
 /// プレイヤーのノックバック状態（衝突による吹っ飛び）を管理するクラス。
 ///
 /// 役割：
-/// - 衝突等で受けたXZ方向の外力（knockbackVelocity）の保持と時間減衰
-/// - 衝突直後の「入力完全ロック」期間の管理
-/// - 吹っ飛び状態（着地まで継続）の管理。TopDownPlayerMoveはこの状態を読んで入力を止める
-/// - 吹っ飛び中の重力倍率
-/// - Y方向（上向き）の吹っ飛び初速、XZ速度の直接指定、上向き速度の制限（Rigidbodyへの書き込みはここに集約）
-///
-/// 担当しない処理：
-/// - 衝突の解釈（相手・壁の分類、勝敗）→ PlayerCollisionHandler
-/// - 通常移動・ダッシュ → TopDownPlayerMove
+/// - TopDownPlayerMoveから通常移動・ダッシュ速度を取得し、重力・ノックバック速度と合成してRigidbodyに反映
+/// - 衝突で受けたXZ方向のノックバック速度の保持と時間減衰
+/// - 入力ロック期間、吹っ飛び状態、吹っ飛び中の重力倍率の管理
+/// - Y方向の吹っ飛び初速と、上向き速度の制限
 ///
 /// MoveManagerTest（旧移動）はこのクラスが公開する状態（CurrentKnockbackVelocity, IsLocked,
-/// IsAirControlWeakened, AirControlMultiplier）を読むだけで、自分でタイマーやノックバック量を管理する必要がない。
+/// IsAirControlWeakened, AirControlMultiplier）を参照する。
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class KnockbackController : MonoBehaviour
@@ -56,10 +51,18 @@ public class KnockbackController : MonoBehaviour
 
     private Rigidbody rb;
     private AudioSource audioSource;
+    private TopDownPlayerMove topDownMove;
+    private bool applyGravity;
 
     // 現在保持しているXZ方向のノックバック速度
     private Vector3 knockbackVelocity = Vector3.zero;
+    private float upwardKnockbackVelocity;
+    private Vector3 gravityVelocity = Vector3.zero;
+    private Vector3 movementVelocity = Vector3.zero;
+    private Vector3 finalVelocity = Vector3.zero;
     private float knockbackLockTimer = 0f;
+    private bool hasUpwardVelocityLimit;
+    private float requestedMaxUpwardVelocity;
 
     // 吹っ飛び状態：最低限の時間が過ぎたうえで着地するまで継続する
     private const float KNOCKED_BACK_DURATION = 0.3f;
@@ -98,6 +101,14 @@ public class KnockbackController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        topDownMove = GetComponent<TopDownPlayerMove>();
+        applyGravity = rb.useGravity;
+        rb.useGravity = false;
+
+        Vector3 initialVelocity = rb.linearVelocity;
+        knockbackVelocity = new Vector3(initialVelocity.x, 0f, initialVelocity.z);
+        gravityVelocity.y = initialVelocity.y;
+        finalVelocity = initialVelocity;
 
         if (groundChecker == null)
         {
@@ -138,26 +149,42 @@ public class KnockbackController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 吹っ飛び中かつ空中のときだけ、追加の重力を与えて落下を速くする。
-    /// 通常の重力（Rigidbodyの重力）はそのままで、倍率の超過分だけを加速度として足す。
-    /// </summary>
-    private void ApplyKnockbackGravity()
-    {
-        float multiplier = KnockbackGravityMultiplier;
-        if (multiplier <= 1f) return;
-        if (!IsKnockedBack) return;
-        if (IsGrounded) return;
-
-        rb.AddForce(Physics.gravity * (multiplier - 1f), ForceMode.Acceleration);
-    }
-
     private void FixedUpdate()
     {
-        preStepVelocity = rb.linearVelocity;
+        preStepVelocity = finalVelocity;
 
-        // 吹っ飛び中（着地するまで）は重力を強めて落下を速くする
-        ApplyKnockbackGravity();
+        bool isGrounded = IsGrounded;
+        Vector3 targetMovementVelocity = topDownMove != null
+            ? topDownMove.GetNormalMoveVelocity() + topDownMove.GetDashVelocity()
+            : Vector3.zero;
+
+        if (IsLocked || IsKnockedBack)
+        {
+            movementVelocity = Vector3.zero;
+        }
+        else if (isGrounded)
+        {
+            movementVelocity = targetMovementVelocity;
+        }
+        else
+        {
+            float airControl = topDownMove != null
+                ? topDownMove.AirControlMultiplier
+                : AirControlMultiplier;
+            movementVelocity = Vector3.Lerp(movementVelocity, targetMovementVelocity, Mathf.Clamp01(airControl));
+        }
+
+        if (applyGravity)
+        {
+            float gravityMultiplier = IsKnockedBack && !isGrounded ? KnockbackGravityMultiplier : 1f;
+            gravityVelocity += Physics.gravity * (gravityMultiplier * Time.fixedDeltaTime);
+        }
+
+        if (isGrounded && upwardKnockbackVelocity + gravityVelocity.y <= 0f)
+        {
+            upwardKnockbackVelocity = 0f;
+            gravityVelocity.y = 0f;
+        }
 
         // ノックバック速度の時間減衰（XZ方向のみ。Y方向の落下は重力に任せる）
         if (knockbackVelocity.sqrMagnitude > 0.01f)
@@ -168,6 +195,19 @@ public class KnockbackController : MonoBehaviour
         {
             knockbackVelocity = Vector3.zero;
         }
+
+        Vector3 velocity = movementVelocity + knockbackVelocity + gravityVelocity;
+        velocity.y += upwardKnockbackVelocity;
+
+        if (hasUpwardVelocityLimit && velocity.y > requestedMaxUpwardVelocity)
+        {
+            upwardKnockbackVelocity -= velocity.y - requestedMaxUpwardVelocity;
+            velocity.y = requestedMaxUpwardVelocity;
+        }
+
+        rb.linearVelocity = velocity;
+        finalVelocity = velocity;
+        hasUpwardVelocityLimit = false;
     }
 
     /// <summary>
@@ -187,46 +227,23 @@ public class KnockbackController : MonoBehaviour
     public void ApplyUpwardBounce(float upForce)
     {
         PlayHitSound();
-
-        Vector3 v = rb.linearVelocity;
-        v.y = upForce;
-        rb.linearVelocity = v;
+        upwardKnockbackVelocity = upForce;
 
         knockedBackTimer = KNOCKED_BACK_DURATION;
         knockedAirborne = true;
     }
 
     /// <summary>
-    /// RigidbodyのXZ速度を直接指定する（Y速度は保持）。加速中の勝敗の結果を反映するために使う。
-    /// </summary>
-    public void SetHorizontalVelocity(Vector3 horizontalVelocity)
-    {
-        Vector3 v = rb.linearVelocity;
-        rb.linearVelocity = new Vector3(horizontalVelocity.x, v.y, horizontalVelocity.z);
-    }
-
-    /// <summary>
-    /// XZ速度を衝突前（直前の物理ステップ開始時）の値に戻す。勝者が「反発しなかった」状態にするために使う。
-    /// </summary>
-    public void RestoreHorizontalVelocity()
-    {
-        SetHorizontalVelocity(preStepVelocity);
-    }
-
-    /// <summary>
-    /// 上向きの速度をmaxUpwardSpeed以下に制限する。壁に当たって上へ飛ぶのを防ぐために使う。
-    /// 制限前の上向き速度を返す（制限が不要だった場合もその値を返す）。
+    /// 壁接触時の上向き速度上限を次の物理ステップで適用する。
     /// </summary>
     public float LimitUpwardVelocity(float maxUpwardSpeed)
     {
-        Vector3 v = rb.linearVelocity;
-        float before = v.y;
-        if (before > maxUpwardSpeed)
-        {
-            v.y = maxUpwardSpeed;
-            rb.linearVelocity = v;
-        }
-        return before;
+        float currentUpwardVelocity = finalVelocity.y;
+        requestedMaxUpwardVelocity = hasUpwardVelocityLimit
+            ? Mathf.Min(requestedMaxUpwardVelocity, maxUpwardSpeed)
+            : maxUpwardSpeed;
+        hasUpwardVelocityLimit = true;
+        return currentUpwardVelocity;
     }
 
     /// <summary>
