@@ -40,6 +40,11 @@ public class KnockbackController : MonoBehaviour
     [Tooltip("ノックバック速度が時間経過でどれだけ早く0に近づくか")]
     public float knockbackDecaySpeed = 4f;
 
+    [Header("吹っ飛び中の落下")]
+    [Tooltip("吹っ飛ばされて着地するまでの間、重力を何倍にするか（1=通常の重力。大きいほど速く落ちる）")]
+    [Min(1f)]
+    public float knockbackGravityMultiplier = 3f;
+
     [Header("キャラクターデータ（設定時は上記の初期値を上書きします）")]
     public CharacterStats stats;
 
@@ -116,8 +121,24 @@ public class KnockbackController : MonoBehaviour
         wasGroundedLastFrame = isGroundedNow;
     }
 
+    /// <summary>
+    /// 吹っ飛び中かつ空中のときだけ、追加の重力を与えて落下を速くする。
+    /// 通常の重力（Rigidbodyの重力）はそのままで、倍率の超過分だけを加速度として足す。
+    /// </summary>
+    private void ApplyKnockbackGravity()
+    {
+        if (knockbackGravityMultiplier <= 1f) return;
+        if (PlayerMove == null || !PlayerMove.IsKnockedBack) return;
+        if (IsGrounded) return;
+
+        rb.AddForce(Physics.gravity * (knockbackGravityMultiplier - 1f), ForceMode.Acceleration);
+    }
+
     private void FixedUpdate()
     {
+        // 吹っ飛び中（着地するまで）は重力を強めて落下を速くする
+        ApplyKnockbackGravity();
+
         // ノックバック速度の時間減衰（XZ方向のみ。Y方向の落下は重力に任せる）
         if (knockbackVelocity.sqrMagnitude > 0.01f)
         {
