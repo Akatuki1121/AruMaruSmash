@@ -1348,6 +1348,18 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 68aabc386fc9c684ca736e273d26bb82, type: 2}
+    - target: {fileID: -5539764629200458662, guid: a6747854318e8b646bb8e5b984d7942c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -5539764629200458662, guid: a6747854318e8b646bb8e5b984d7942c, type: 3}
+      propertyPath: m_TagString
+      value: Ground
+      objectReference: {fileID: 0}
+    - target: {fileID: -4004610550653022946, guid: a6747854318e8b646bb8e5b984d7942c, type: 3}
+      propertyPath: m_TagString
+      value: Ground
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6747854318e8b646bb8e5b984d7942c, type: 3}
       propertyPath: m_Name
       value: sora_st
