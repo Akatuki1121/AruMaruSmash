@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 29181b5b64a673040adaa876ba51d048, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.47687638
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29181b5b64a673040adaa876ba51d048, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.47687638
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29181b5b64a673040adaa876ba51d048, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.47687638
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 29181b5b64a673040adaa876ba51d048, type: 3}
       propertyPath: m_LocalPosition.x
@@ -187,17 +187,25 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1803062225970624556, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: knockbackController
+      value: 
+      objectReference: {fileID: 8004968053161362706}
+    - target: {fileID: 3291036865661844429, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: groundChecker
+      value: 
+      objectReference: {fileID: 9065767522182186404}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.x
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.y
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalScale.z
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_LocalPosition.x
@@ -239,6 +247,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6118032339298840857, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_Radius
+      value: 0.17
+      objectReference: {fileID: 0}
+    - target: {fileID: 6118032339298840857, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_Center.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6118032339298840857, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_Center.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6118032339298840857, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+      propertyPath: m_Center.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7048307359957383641, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -264,3 +288,25 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5397790295217848279, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
   m_PrefabInstance: {fileID: 4808508081064754911}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8004968053161362706 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3291036865661844429, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+  m_PrefabInstance: {fileID: 4808508081064754911}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c5e6e6e65cff7140ac38130e3bd8ff9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
+--- !u!114 &9065767522182186404 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4569837613208632187, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
+  m_PrefabInstance: {fileID: 4808508081064754911}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
