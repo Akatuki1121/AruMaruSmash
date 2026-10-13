@@ -159,18 +159,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
   JoyAccel: {x: 0, y: 0, z: 0}
-  maxSpeed: 40
-  currentSpeed: 0
-  brakeSpeed: 10
-  acceleration: 4
   stats: {fileID: 0}
+  groundMoveSpeed:
+    useOverride: 0
+    value: 0
+  groundAcceleration:
+    useOverride: 0
+    value: 0
+  groundDeceleration:
+    useOverride: 0
+    value: 0
+  airControlMultiplier:
+    useOverride: 0
+    value: 0
+  currentSpeed: 0
   rb: {fileID: 885649622215985095}
   tiltAmount: 0
-  dashAmount: 1
-  dashDuration: 1
-  dashSpeedMultiplier: 1
+  dashAmount:
+    useOverride: 0
+    value: 0
+  dashDuration:
+    useOverride: 0
+    value: 0
+  dashSpeedMultiplier:
+    useOverride: 0
+    value: 0
   dashTiltAmount: 0
-  joyconIndex: 0
+  joyconIndex: 2
   IsAttack: 0
 --- !u!114 &1803062225970624556
 MonoBehaviour:
@@ -220,12 +235,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
   groundChecker: {fileID: 0}
-  knockbackLockDuration: 0.25
-  airControlMultiplier: 0.3
-  airControlKnockbackThreshold: 0.5
-  knockbackDecaySpeed: 4
   stats: {fileID: 0}
-  PlayerMove: {fileID: 8462564121325967356}
+  knockbackLockDuration:
+    useOverride: 0
+    value: 0
+  knockbackDecaySpeed:
+    useOverride: 0
+    value: 0
+  knockbackGravityMultiplier:
+    useOverride: 0
+    value: 0
+  airControlKnockbackThreshold:
+    useOverride: 0
+    value: 0
   HitSound: {fileID: 8300000, guid: da6422587b468cf4a90837e96914ce47, type: 3}
 --- !u!114 &1104409793882261765
 MonoBehaviour:
@@ -239,12 +261,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  asymmetryFactor: 0.85
-  bounceForceMultiplier: 1
-  upwardForcePerSpeed: 0.6
-  minUpwardForce: 1.5
-  maxUpwardForce: 8
-  sameTargetCooldown: 0.4
+  stats: {fileID: 0}
+  asymmetryFactor:
+    useOverride: 0
+    value: 0
+  bounceForceMultiplier:
+    useOverride: 0
+    value: 0
+  upwardForcePerSpeed:
+    useOverride: 0
+    value: 0
+  minUpwardForce:
+    useOverride: 0
+    value: 0
+  maxUpwardForce:
+    useOverride: 0
+    value: 0
+  sameTargetCooldown:
+    useOverride: 0
+    value: 0
+  wallNormalYThreshold:
+    useOverride: 0
+    value: 0
+  wallMaxUpwardSpeed:
+    useOverride: 0
+    value: 0
+  logWallContacts: 0
 --- !u!82 &-5905616833478383249
 AudioSource:
   m_ObjectHideFlags: 0

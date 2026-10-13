@@ -1,101 +1,133 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
-public class JoyconManager: MonoBehaviour
-{
 
-    // Settings accessible via Unity
+public class JoyconManager : MonoBehaviour
+{
     public bool EnableIMU = true;
     public bool EnableLocalize = true;
 
-	// Different operating systems either do or don't like the trailing zero
-	private const ushort vendor_id = 0x57e;
-	private const ushort vendor_id_ = 0x057e;
-	private const ushort product_l = 0x2006;
-	private const ushort product_r = 0x2007;
+    private const ushort VendorId = 0x057e;
+    private const ushort ProductLeft = 0x2006;
+    private const ushort ProductRight = 0x2007;
+    private const float RescanIntervalSeconds = 1.0f;
 
-    public List<Joycon> j; // Array of all connected Joy-Cons
-    static JoyconManager instance;
+    public List<Joycon> j;
+    private static JoyconManager instance;
+    private float nextScanTime;
+    private bool loggedNoJoycons;
 
-    public static JoyconManager Instance
+    public static JoyconManager Instance => instance;
+
+    private void Awake()
     {
-        get { return instance; }
-    }
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-    void Awake()
-    {
-        if (instance != null) Destroy(gameObject);
         instance = this;
-		int i = 0;
-
-		j = new List<Joycon>();
-		bool isLeft = false;
-		HIDapi.hid_init();
-
-		IntPtr ptr = HIDapi.hid_enumerate(vendor_id, 0x0);
-		IntPtr top_ptr = ptr;
-
-		if (ptr == IntPtr.Zero)
-		{
-			ptr = HIDapi.hid_enumerate(vendor_id_, 0x0);
-			if (ptr == IntPtr.Zero)
-			{
-				HIDapi.hid_free_enumeration(ptr);
-				Debug.Log ("No Joy-Cons found!");
-			}
-		}
-		hid_device_info enumerate;
-		while (ptr != IntPtr.Zero) {
-			enumerate = (hid_device_info)Marshal.PtrToStructure (ptr, typeof(hid_device_info));
-
-			Debug.Log (enumerate.product_id);
-				if (enumerate.product_id == product_l || enumerate.product_id == product_r) {
-					if (enumerate.product_id == product_l) {
-						isLeft = true;
-						Debug.Log ("Left Joy-Con connected.");
-					} else if (enumerate.product_id == product_r) {
-						isLeft = false;
-						Debug.Log ("Right Joy-Con connected.");
-					} else {
-						Debug.Log ("Non Joy-Con input device skipped.");
-					}
-					IntPtr handle = HIDapi.hid_open_path (enumerate.path);
-					HIDapi.hid_set_nonblocking (handle, 1);
-					j.Add (new Joycon (handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft));
-					++i;
-				}
-				ptr = enumerate.next;
-			}
-		HIDapi.hid_free_enumeration (top_ptr);
+        j = new List<Joycon>();
+        HIDapi.hid_init();
     }
 
-    void Start()
+    private void Start()
     {
-		for (int i = 0; i < j.Count; ++i)
-		{
-			Debug.Log (i);
-			Joycon jc = j [i];
-			byte LEDs = 0x0;
-			LEDs |= (byte)(0x1 << i);
-			jc.Attach (leds_: LEDs);
-			jc.Begin ();
-		}
+        ScanAndAttach();
     }
 
-    void Update()
+    private void Update()
     {
-		for (int i = 0; i < j.Count; ++i)
-		{
-			j[i].Update();
-		}
+        if (j.Count == 0 && Time.unscaledTime >= nextScanTime)
+        {
+            ScanAndAttach();
+        }
+
+        for (int i = 0; i < j.Count; i++)
+        {
+            j[i].Update();
+        }
     }
 
-    void OnApplicationQuit()
+    private void ScanAndAttach()
     {
-		for (int i = 0; i < j.Count; ++i)
-		{
-			j[i].Detach ();
-		}
+        nextScanTime = Time.unscaledTime + RescanIntervalSeconds;
+
+        IntPtr devices = HIDapi.hid_enumerate(VendorId, 0);
+        hid_device_info device;
+        int openedCount = 0;
+
+        try
+        {
+            IntPtr current = devices;
+            while (current != IntPtr.Zero)
+            {
+                device = (hid_device_info)Marshal.PtrToStructure(current, typeof(hid_device_info));
+                current = device.next;
+
+                bool isLeft = device.product_id == ProductLeft;
+                if (!isLeft && device.product_id != ProductRight)
+                {
+                    continue;
+                }
+
+                IntPtr handle = HIDapi.hid_open_path(device.path);
+                if (handle == IntPtr.Zero)
+                {
+                    Debug.LogWarning($"Joy-Con HID device was found but could not be opened (product {device.product_id:X4}).");
+                    continue;
+                }
+
+                HIDapi.hid_set_nonblocking(handle, 1);
+                Joycon joycon = new Joycon(handle, EnableIMU, EnableLocalize && EnableIMU, 0.05f, isLeft);
+                j.Add(joycon);
+
+                byte leds = (byte)(1 << (j.Count - 1));
+                joycon.Attach(leds_: leds);
+                joycon.Begin();
+                openedCount++;
+                Debug.Log($"{(isLeft ? "Left" : "Right")} Joy-Con connected through HID.");
+            }
+        }
+        finally
+        {
+            if (devices != IntPtr.Zero)
+            {
+                HIDapi.hid_free_enumeration(devices);
+            }
+        }
+
+        if (openedCount == 0 && !loggedNoJoycons)
+        {
+            Debug.Log("No Joy-Con HID devices found yet; checking again every second.");
+            loggedNoJoycons = true;
+        }
+        else if (openedCount > 0)
+        {
+            loggedNoJoycons = false;
+        }
+    }
+
+    private void OnApplicationQuit()
+    {
+        for (int i = 0; i < j.Count; i++)
+        {
+            j[i].Detach();
+        }
+        HIDapi.hid_exit();
+        if (instance == this)
+        {
+            instance = null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            instance = null;
+        }
     }
 }
