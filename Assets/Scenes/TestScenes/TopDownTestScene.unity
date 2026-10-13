@@ -1290,16 +1290,28 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.3837547
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.04
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.604061
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 599978426525745416, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1349,6 +1361,22 @@ PrefabInstance:
       propertyPath: joyconIndex
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4308683872946384771, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308683872946384771, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308683872946384771, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308683872946384771, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5405784701482390878, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -1357,6 +1385,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Arumajiro Player
       objectReference: {fileID: 0}
+    - target: {fileID: 6610865429673068275, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: knockbackController
+      value: 
+      objectReference: {fileID: 1761194408}
     - target: {fileID: 6669237909574664646, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -1373,6 +1405,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c863403e220640d4cb2056ee50235c68, type: 2}
+    - target: {fileID: 8004968053161362706, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+      propertyPath: groundChecker
+      value: 
+      objectReference: {fileID: 1761194409}
     - target: {fileID: 8806466230504835471, guid: 6d392563fcee35f469269f67f168798b, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -1578,6 +1614,28 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5520042963821325027, guid: 6d392563fcee35f469269f67f168798b, type: 3}
   m_PrefabInstance: {fileID: 1670701008}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1761194408 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8004968053161362706, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+  m_PrefabInstance: {fileID: 1670701008}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1761194405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c5e6e6e65cff7140ac38130e3bd8ff9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
+--- !u!114 &1761194409 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9065767522182186404, guid: 6d392563fcee35f469269f67f168798b, type: 3}
+  m_PrefabInstance: {fileID: 1670701008}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1761194405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185af52522ed692459111c6968b55c70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroundChecker
 --- !u!1 &1805825046 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4541706968712098524, guid: a6747854318e8b646bb8e5b984d7942c, type: 3}
