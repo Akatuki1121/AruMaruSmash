@@ -839,7 +839,6 @@ MonoBehaviour:
   Players:
   - {fileID: 1017920493824726076, guid: eaca6cb6707049247a1ca6b69a97b861, type: 3}
   - {fileID: 890238701697212746, guid: da0c36188f1889d42aaaa94a3cdae49c, type: 3}
-  - {fileID: 0}
 --- !u!54 &1354711063
 Rigidbody:
   m_ObjectHideFlags: 0
