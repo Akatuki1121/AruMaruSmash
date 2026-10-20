@@ -340,8 +340,10 @@ public class Joycon
         if (state > state_.NO_JOYCONS)
         {
             byte[] report_buf = new byte[report_len];
+            bool got_report = false;
             while (reports.Count > 0)
             {
+                got_report = true;
                 Report rep;
                 lock (reports)
                 {
@@ -368,6 +370,14 @@ public class Joycon
                     reports.Count, report_buf[0], report_buf[1], System.DateTime.Now.Subtract(rep.GetTime()), rep.GetTime().Subtract(ts_prev)), DebugType.THREADING);
                 ts_prev = rep.GetTime();
             }
+
+            if (!got_report)
+            {
+                // V‚µ‚¢“ü—Í‚ª–³‚¢ƒtƒŒ[ƒ€‚Å‚Íu‰Ÿ‚µ‚½uŠÔ^—£‚µ‚½uŠÔv‚ğ‚¿‰z‚³‚È‚¢
+                Array.Clear(buttons_down, 0, buttons_down.Length);
+                Array.Clear(buttons_up, 0, buttons_up.Length);
+            }
+
             ProcessButtonsAndStick(report_buf);
 			if (rumble_obj.timed_rumble) {
 				if (rumble_obj.t < 0) {

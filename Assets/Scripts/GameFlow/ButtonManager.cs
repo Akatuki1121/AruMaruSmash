@@ -34,7 +34,7 @@ public class ButtonManager : MonoBehaviour
     // 設定ボタンが押された時の処理
     public void OnSettingsClicked()
     {
-
+        GameFlowManager.Instance?.Request(GameEvent.OpenSettings);
     }
     // 操作説明ボタンが押されたときの処理
     public void OnHowToPlayClicked()
