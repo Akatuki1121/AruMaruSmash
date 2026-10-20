@@ -140,11 +140,17 @@ jobs:
 
               // 今週作成されたもの → 作成者に記録
               if (created >= since && created <= now) {
-                const login = item.user?.login;
-                if (login && issueEventsByUser[login]) {
-                  const key = `${kind}作成:#${item.number}`;
-                  if (!issueEventsByUser[login].some(e => e.startsWith(key))) {
-                    issueEventsByUser[login].push(`${kind}作成: #${item.number} ${item.title}`);
+                // 自動作成PR(作成者がBot)の場合は assignee(=プッシュした人) を作成者として扱う
+                const isBotAuthor = item.user?.type === 'Bot';
+                const creators = isBotAuthor
+                  ? (item.assignees || []).map(a => a.login)
+                  : [item.user?.login];
+                for (const login of creators) {
+                  if (login && issueEventsByUser[login]) {
+                    const key = `${kind}作成:#${item.number}`;
+                    if (!issueEventsByUser[login].some(e => e.startsWith(key))) {
+                      issueEventsByUser[login].push(`${kind}作成: #${item.number} ${item.title}`);
+                    }
                   }
                 }
               }

@@ -1,0 +1,33 @@
+name: Auto PR
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create PR if none exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          open=$(gh pr list --head "$BRANCH" --state open --json number --jq length)
+          if [ "$open" != "0" ]; then
+            echo "PR already exists"
+            exit 0
+          fi
+          url=$(gh pr create --base main --head "$BRANCH" \
+            --title "$BRANCH" \
+            --body "@${ACTOR} がプッシュしたブランチから自動作成されたPRです。" \
+            --draft)
+          echo "$url"
+          gh pr edit "$url" --add-assignee "$ACTOR" || echo "assignee の設定に失敗しました"
