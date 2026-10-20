@@ -26,4 +26,20 @@ public class ButtonManager : MonoBehaviour
         GameFlowManager.Instance?.Request(GameEvent.StartGame);
     }
 
+    // titleに戻るボタンが押されたときの処理
+    public void OnBackTitleClicked()
+    {
+        GameFlowManager.Instance?.Request(GameEvent.ToTitle);
+    }
+    // 設定ボタンが押された時の処理
+    public void OnSettingsClicked()
+    {
+
+    }
+    // 操作説明ボタンが押されたときの処理
+    public void OnHowToPlayClicked()
+    {
+        GameFlowManager.Instance?.Request(GameEvent.OpenGuide);
+    }
+
 }
