@@ -104,7 +104,8 @@ public class PlayerCollisionHandler : MonoBehaviour
         PlayerCollisionHandler other = collision.collider.GetComponent<PlayerCollisionHandler>();
         if (other == null)
         {
-            // 壁・ギミック等、プレイヤーでない相手：プレイヤー同士の衝突処理の対象外。壁に当たって上へ飛ぶ現象だけ抑える
+            // 壁・ギミック等、プレイヤーでない相手：壁なら強く跳ね返し、上向き速度も抑える
+            BounceOffWall(collision);
             SuppressUpwardVelocityAgainstWall(collision);
             return;
         }
@@ -124,6 +125,35 @@ public class PlayerCollisionHandler : MonoBehaviour
         lastHitTime = Time.time;
         other.lastHitOther = this;
         other.lastHitTime = Time.time;
+    }
+
+    private void BounceOffWall(Collision collision)
+    {
+        Vector3 velocity = knockbackController.PreStepVelocity;
+        velocity.y = 0f;
+
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            Vector3 normal = collision.GetContact(i).normal;
+            if (Mathf.Abs(normal.y) >= WallNormalYThreshold) continue;
+
+            normal.y = 0f;
+            if (normal.sqrMagnitude < 0.0001f) continue;
+            normal.Normalize();
+
+            float velocityTowardWall = Vector3.Dot(velocity, normal);
+            if (velocityTowardWall > 0f)
+            {
+                normal = -normal;
+                velocityTowardWall = -velocityTowardWall;
+            }
+
+            if (velocityTowardWall >= -0.01f) return;
+
+            Vector3 reflectedVelocity = Vector3.Reflect(velocity, normal);
+            knockbackController.ApplyKnockback(reflectedVelocity - velocity);
+            return;
+        }
     }
 
     // 壁に接触し続けている間も上向き速度を抑える（Enterだけだと、押し付け中に再び上へ押し出されるため）
