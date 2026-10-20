@@ -12,7 +12,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
     [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
     public CharacterStats stats;
-
+    
     // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
     private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
 

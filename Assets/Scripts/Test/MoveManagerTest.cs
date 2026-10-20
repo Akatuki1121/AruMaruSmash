@@ -46,6 +46,7 @@ public class MoveManagerTest : InputManagerTest
     public KnockbackController knockbackController;
 
     private Vector3 moveDirection = Vector3.zero;
+    public Vector3 CurrentMoveDirection => moveDirection;
 
     protected override void Awake()
     {
