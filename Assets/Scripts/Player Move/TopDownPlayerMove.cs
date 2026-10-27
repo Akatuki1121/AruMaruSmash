@@ -11,7 +11,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
     [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
     public CharacterStats stats;
-    
+
     // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
     private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
 
@@ -182,39 +182,33 @@ public class TopDownPlayerMove : MonoBehaviour
 
         JoyAccel = joycon.GetAccel();
 
-        // 以下のログを追加して、どっちのプレイヤーがどの値を検知しているか確認
         Debug.Log($"{gameObject.name} (Index:{joyconIndex}) のAccel: {JoyAccel}");
 
-        float moveX = 0;
-        float moveZ = 0;
+        const float deadZone = 0.2f;
 
-        // ジョイコンの前後傾き（Y）で、画面の上下（Z軸）を移動
-        if (JoyAccel.y > 0.2f) moveZ -= 1f;
-        if (JoyAccel.y < -0.2f) moveZ += 1f;
-
-        // ジョイコンの左右傾き（X）で、画面の左右（X軸）を移動
-        if (JoyAccel.x > 0.2f) moveX += 1f;
-        if (JoyAccel.x < -0.2f) moveX -= 1f;
+        // 傾きをそのまま方向成分として使う（360度）
+        float moveX = JoyAccel.x;
+        float moveZ = -JoyAccel.y;
 
         Vector3 inputVector = new(moveX, 0f, moveZ);
 
-        // 現在の傾き量を計算（0〜1）
-        tiltAmount = Mathf.Clamp01(inputVector.magnitude);
-
-        if (inputVector.sqrMagnitude > 0)
-        {
-            moveDirection = inputVector.normalized;
-
-            // 傾き量を計算するために、X軸とY軸の傾きの絶対値の最大値を使用
-            float rawTilt = Mathf.Max(Mathf.Abs(JoyAccel.x), Mathf.Abs(JoyAccel.y));
-            float normalizedTilt = (rawTilt - 0.2f) / (1f - 0.2f); // 0.2〜1の範囲を0〜1に正規化
-            tiltAmount = Mathf.Clamp01(normalizedTilt);
-        }
-        else
+        // デッドゾーン処理：小さい傾きは入力なしとして扱う
+        float inputMagnitude = inputVector.magnitude;
+        if (inputMagnitude <= deadZone)
         {
             moveDirection = Vector3.zero;
             tiltAmount = 0f;
+            return;
         }
+
+        // デッドゾーンを越えた分だけを0〜1へ正規化する
+        float usableMagnitude = Mathf.Clamp01(
+            (inputMagnitude - deadZone) / (1f - deadZone)
+        );
+
+        // 方向は360度、速度倍率は傾き量で決める
+        moveDirection = inputVector.normalized;
+        tiltAmount = usableMagnitude;
     }
 
     private void TryAcquireJoyCon()
