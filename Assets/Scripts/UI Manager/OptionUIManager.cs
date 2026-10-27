@@ -18,7 +18,6 @@ public class OptionUIManager : BaseUIManager
     private void Start()
     {
         button = FindAnyObjectByType<ButtonManager>();
-        OptionUI.SetActive(false);
     }
 
     private void Update()

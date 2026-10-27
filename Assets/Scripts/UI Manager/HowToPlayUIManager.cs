@@ -12,7 +12,6 @@ public class HowToPlayUIManager : BaseUIManager
     private void Start()
     {
         button = FindAnyObjectByType<ButtonManager>();
-        HowToPlayUI.SetActive(false);
     }
 
     private void Update()
