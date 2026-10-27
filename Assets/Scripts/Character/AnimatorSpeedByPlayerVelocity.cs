@@ -17,14 +17,12 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
     [Tooltip("モデルの前方(+Z)と進行方向のずれを補正する角度。転がる軸(ローカルX)が進行方向と直角になるよう、見た目を見て調整する")]
     [SerializeField] private float yawOffset = 0f;
 
-    private MoveManagerTest moveManager;
     private float currentYaw;
     private float rotationVelocity;
 
     private void Awake()
     {
         if (movement == null) movement = GetComponent<TopDownPlayerMove>();
-        moveManager = GetComponent<MoveManagerTest>();
         if (targetAnimator == null) targetAnimator = GetComponentInChildren<Animator>(true);
 
         if (targetAnimator == null) return;
@@ -85,13 +83,6 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
             direction = movement.GetInputMoveVelocity();
             direction.y = 0f;
             if (direction.sqrMagnitude > minFacingSpeed * minFacingSpeed) return true;
-        }
-
-        if (moveManager != null)
-        {
-            direction = moveManager.CurrentMoveDirection;
-            direction.y = 0f;
-            if (direction.sqrMagnitude > 0.0001f) return true;
         }
 
         return false;

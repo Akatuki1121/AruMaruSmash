@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// 見下ろし視点のプレイヤー移動を制御するクラス。
@@ -39,6 +38,9 @@ public class TopDownPlayerMove : MonoBehaviour
     private float GroundDeceleration => groundDeceleration.Resolve(Stats.brakeSpeed);
     public float AirControlMultiplier => Mathf.Clamp01(airControlMultiplier.Resolve(Stats.airControlMultiplier));
 
+    // 接地中の最大移動速度（ChargeDashControllerがダッシュ速度の基準にする）
+    public float GroundMaxSpeed => GroundMoveSpeed;
+
     private Vector3 moveDirection = Vector3.zero;
     private const float MOVEMENT_VELOCITY_EPSILON = 0.0001f;
 
@@ -47,32 +49,25 @@ public class TopDownPlayerMove : MonoBehaviour
     // 現在の傾き量（0〜1）。これがそのまま速度倍率の元になる
     public float tiltAmount = 0f;
 
-    [Header("ダッシュ（加速ボタン）")]
-    [Tooltip("ボタンを押した瞬間に、ダッシュの強さ（0〜1）をこの値まで一気に上げる。基本1。下げると最大ダッシュに届かない")]
-    public FloatOverride dashAmount;
-
-    [Tooltip("ボタンを離してから、ダッシュの強さが0に戻るまでの秒数。上げるほどダッシュ後も速さが長く残る")]
-    public FloatOverride dashDuration;
-
-    [Tooltip("ダッシュ最大時に、移動速度へ上乗せする倍率。1なら通常の2倍速（1+1）。上げるほどダッシュが速くなる")]
-    public FloatOverride dashSpeedMultiplier;
-
-    private float DashAmount => dashAmount.Resolve(Stats.dashAmount);
-    private float DashDuration => dashDuration.Resolve(Stats.dashDuration);
-    private float DashSpeedMultiplier => dashSpeedMultiplier.Resolve(Stats.dashSpeedMultiplier);
-
-    // 現在のダッシュブースト
-    [SerializeField] private float dashTiltAmount = 0f;
-
     [Header("Joy-Con設定")]
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
     private Joycon joycon; // 接続されているJoy-Con本体への参照
+    public Joycon ActiveJoycon => joycon;   // ChargeDashControllerがボタン入力を読むために公開
 
     private KnockbackController knockback;                // 吹っ飛び状態の参照用（吹っ飛び状態の管理はKnockbackController側）
     private bool wasKnockedBack = false;                  // 吹っ飛び開始の瞬間を検知するための前フレームの状態
     public bool IsKnockedBack => knockback != null && knockback.IsKnockedBack;   // ノックバック中フラグ（着地まで継続）
 
-    public bool IsAttack;   // 攻撃フラグ
+    private ChargeDashController chargeDash;              // チャージ→ダッシュの担当（無くても動く）
+
+    // 衝突の勝敗判定に使う「ダッシュ中」フラグ（実体はChargeDashController）
+    public bool IsAttack => chargeDash != null && chargeDash.IsAttack;
+
+    private bool IsCharging => chargeDash != null && chargeDash.IsCharging;
+
+    // チャージ中は最大移動速度が下がり、減速も強くなる（進行方向を決められる程度の速さまで落とす）
+    private float ChargeSpeedMultiplier => chargeDash != null ? chargeDash.MoveSpeedMultiplier : 1f;
+    private float BrakeRate => IsCharging ? chargeDash.ChargeDecelerationRate : GroundDeceleration;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -87,11 +82,11 @@ public class TopDownPlayerMove : MonoBehaviour
         // 吹っ飛び状態の参照を取得しておく
         knockback = GetComponent<KnockbackController>();
 
+        // チャージ→ダッシュの参照を取得しておく（ダッシュ関連はChargeDashController側）
+        chargeDash = GetComponent<ChargeDashController>();
+
         // Joy-Conの接続を試みる
         TryAcquireJoyCon();
-
-        // 攻撃時判定をリセット
-        IsAttack = false;
     }
 
     // Update is called once per frame
@@ -129,8 +124,6 @@ public class TopDownPlayerMove : MonoBehaviour
 
         GetMoveDirection();
 
-        HandleDashInput();
-
         bool hasInput = GetTiltX() > 0.2f || GetTiltX() < -0.2f || GetTiltY() > 0.2f || GetTiltY() < -0.2f;
 
         if (hasInput)
@@ -138,17 +131,25 @@ public class TopDownPlayerMove : MonoBehaviour
             // 前回の移動方向と現在の移動方向が逆向きの場合、減速する
             if (currentSpeed > 0.1f && Vector3.Dot(oldDir, moveDirection) < -0.1f)
             {
-                currentSpeed -= GroundDeceleration * Time.deltaTime;
+                currentSpeed -= BrakeRate * Time.deltaTime;
                 currentSpeed = Mathf.Max(currentSpeed, 0f);
 
                 moveDirection = oldDir; // 逆方向入力時は前回の方向を維持する
             }
             else
             {
-                float targetMaxSpeed = GroundMoveSpeed * tiltAmount;
+                float targetMaxSpeed = GroundMoveSpeed * tiltAmount * ChargeSpeedMultiplier;
 
-                currentSpeed += targetMaxSpeed * GroundAcceleration * Time.deltaTime;
-                currentSpeed = Mathf.Min(currentSpeed, targetMaxSpeed);
+                if (IsCharging && currentSpeed > targetMaxSpeed)
+                {
+                    // チャージ開始直後は、急に止めずに徐々に減速してチャージ中の上限へ近づける
+                    currentSpeed = Mathf.MoveTowards(currentSpeed, targetMaxSpeed, BrakeRate * Time.deltaTime);
+                }
+                else
+                {
+                    currentSpeed += targetMaxSpeed * GroundAcceleration * Time.deltaTime;
+                    currentSpeed = Mathf.Min(currentSpeed, targetMaxSpeed);
+                }
             }
         }
         else
@@ -156,7 +157,7 @@ public class TopDownPlayerMove : MonoBehaviour
             // 入力が無いときは、現在の速度が0より大きい場合に減速する
             if (currentSpeed > 0.01f)
             {
-                currentSpeed -= GroundDeceleration * Time.deltaTime;
+                currentSpeed -= BrakeRate * Time.deltaTime;
                 currentSpeed = Mathf.Max(currentSpeed, 0f);
 
                 // 入力がない場合も、直前の移動方向を維持して減速する
@@ -245,11 +246,11 @@ public class TopDownPlayerMove : MonoBehaviour
         return GetWorldMoveDirection() * currentSpeed;
     }
 
-    // ダッシュによる追加速度を返す
+    // ダッシュによる追加速度を返す（実体はChargeDashController）
     public Vector3 GetDashVelocity()
     {
-        if (IsKnockedBack) return Vector3.zero;
-        return GetWorldMoveDirection() * (currentSpeed * dashTiltAmount * DashSpeedMultiplier);
+        if (IsKnockedBack || chargeDash == null) return Vector3.zero;
+        return chargeDash.GetDashVelocity();
     }
 
     // 通常移動とダッシュを合わせた入力由来の移動ベクトル
@@ -258,11 +259,19 @@ public class TopDownPlayerMove : MonoBehaviour
         return GetNormalMoveVelocity() + GetDashVelocity();
     }
 
+    // 現在の入力方向（ワールド座標・接地面に沿わせたもの）。入力が無ければ0
+    public Vector3 WorldMoveDirection => GetWorldMoveDirection();
+
     private Vector3 GetWorldMoveDirection()
     {
         if (moveDirection.sqrMagnitude <= 0f) return Vector3.zero;
 
-        Vector3 direction = transform.rotation * moveDirection;
+        return ProjectOnGround(transform.rotation * moveDirection);
+    }
+
+    // 方向ベクトルを足元の接地面に沿わせる（坂では斜面方向になる）。接地面が見つからなければそのまま返す
+    public Vector3 ProjectOnGround(Vector3 direction)
+    {
         Ray ray = new(rb.position + (Vector3.up * 0.2f), Vector3.down);
         if (Physics.Raycast(ray, out RaycastHit hit, 0.6f))
         {
@@ -272,64 +281,4 @@ public class TopDownPlayerMove : MonoBehaviour
         return direction;
     }
 
-    public void HandleDashInput()
-    {
-        bool isDashButtonDown = false;
-        bool isDashButtonHeld = false;
-
-        if (joycon != null)
-        {
-            // 横持ち時に「物理的に一番右側（進行方向）」にあるボタンを設定
-            if (joycon.isLeft)
-            {
-                // Lジョイコンを横持ち（反時計回りに90度回転）すると、縦持ち時の「下（▼）」ボタン（DPAD_DOWN）が物理的な右側
-                isDashButtonDown = joycon.GetButtonDown(Joycon.Button.DPAD_DOWN);
-                isDashButtonHeld = joycon.GetButton(Joycon.Button.DPAD_DOWN);
-            }
-            else
-            {
-                // Rジョイコンを横持ち（時計回りに90度回転）すると、縦持ち時の「上（X）」ボタン（DPAD_UP）が物理的な右側
-                isDashButtonDown = joycon.GetButtonDown(Joycon.Button.DPAD_UP);
-                isDashButtonHeld = joycon.GetButton(Joycon.Button.DPAD_UP);
-            }
-        }
-        // ジョイコンが無いときはデバッグ用にキーボードのEキーでも動くようにPC用フォールバックを用意
-        else
-        {
-            Keyboard kb = Keyboard.current;
-            if (kb != null)
-            {
-                isDashButtonDown = kb.eKey.wasPressedThisFrame;
-                isDashButtonHeld = kb.eKey.isPressed;
-            }
-        }
-
-        // 統合した判定フラグを使ってダッシュの計算を行う
-        if (isDashButtonDown)
-        {
-            IsAttack = true;
-            // ボタンを押した瞬間、一気に最大までジャンプ
-            dashTiltAmount = Mathf.Max(dashTiltAmount, DashAmount);
-        }
-
-        if (isDashButtonHeld)
-        {
-            IsAttack = true;
-            // 押しっぱなしの間は高いダッシュ値を維持する
-            dashTiltAmount = Mathf.Max(dashTiltAmount, DashAmount);
-        }
-        else
-        {
-            // 離されたら、指定された秒数(dashDuration)をかけて滑らかに減衰して0に戻る
-            float decaySpeed = 1f / Mathf.Max(DashDuration, MOVEMENT_VELOCITY_EPSILON);
-            dashTiltAmount = Mathf.MoveTowards(dashTiltAmount, 0f, decaySpeed * Time.deltaTime);
-        }
-
-        if(dashTiltAmount <= 0)
-        {
-            IsAttack = false;
-        }
-
-        dashTiltAmount = Mathf.Clamp01(dashTiltAmount);
-    }
 }

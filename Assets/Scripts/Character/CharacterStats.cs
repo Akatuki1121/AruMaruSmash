@@ -18,14 +18,39 @@ public class CharacterStats : ScriptableObject
     public float rotationSpeed = 120f;   // TPS用。TopDownでは未使用でも可
 
     [Header("ダッシュ")]
-    [Tooltip("ダッシュ量をこの値までジャンプ（基本1.0）")]
+    [Tooltip("【未使用】チャージダッシュ導入前の旧設定。ChargeDashControllerは参照しない")]
     public float dashAmount = 1f;
 
     [Tooltip("ダッシュの持続時間（秒）")]
     public float dashDuration = 1f;
 
-    [Tooltip("ダッシュ最大時、スピードを何倍ブーストするか（1.0なら2倍速）")]
+    [Tooltip("【未使用】チャージダッシュ導入前の旧設定。ChargeDashControllerは参照しない")]
     public float dashSpeedMultiplier = 1f;
+
+    [Header("チャージダッシュ（ダッシュの持続時間は上のdashDurationを使う）")]
+    [Tooltip("最大チャージに必要な長押し時間（秒）")]
+    [Min(0.01f)]
+    public float chargeMaxTime = 2.5f;
+
+    [Tooltip("チャージ中の最大移動速度の倍率（0〜1）。小さいほど遅い。進行方向を決められる程度に残す")]
+    [Range(0f, 1f)]
+    public float chargeMoveSpeedMultiplier = 0.3f;
+
+    [Tooltip("チャージ開始後、速度がチャージ中の上限まで落ちるときの減速の強さ（速度/秒）")]
+    [Min(0f)]
+    public float chargeDeceleration = 40f;
+
+    [Tooltip("チャージ0秒（ちょい押し）のダッシュ速度。maxSpeedに対する倍率")]
+    [Min(0f)]
+    public float dashMinSpeedMultiplier = 1.5f;
+
+    [Tooltip("最大チャージのダッシュ速度。maxSpeedに対する倍率")]
+    [Min(0f)]
+    public float dashMaxSpeedMultiplier = 3f;
+
+    [Tooltip("最大チャージのダッシュで衝突したときのヒットストップ時間（秒・実時間）")]
+    [Min(0f)]
+    public float hitStopDuration = 0.05f;
 
     [Header("ノックバック")]
     [Tooltip("吹っ飛び・押し負け直後、入力での移動を完全に無効化する時間（秒）")]
