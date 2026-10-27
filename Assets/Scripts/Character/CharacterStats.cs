@@ -5,8 +5,7 @@ using UnityEngine;
 /// プログラマー/企画がバランス調整用に使用する。
 /// 見た目（マテリアル・プレハブ等）はCharacterVisualで別管理する。
 ///
-/// ここの値は「デフォルト値」として扱う。数値は元のPrefab A/Bの保存値に合わせてある（空中制御・吹っ飛び中の重力・壁の抑制は新規の調整値）。
-/// 各コンポーネント側のInspectorで「上書き」にチェックを入れた項目だけ、コンポーネント側の値が優先される（FloatOverride）。
+/// 現在、プレイヤーの各コンポーネント（TopDownPlayerMove等）はこのアセットを参照せず、Inspectorの値を直接使う。
 /// </summary>
 [CreateAssetMenu(fileName = "New CharacterStats", menuName = "AruMaruSmash/CharacterStats")]
 public class CharacterStats : ScriptableObject

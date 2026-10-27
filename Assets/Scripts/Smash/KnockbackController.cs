@@ -19,35 +19,29 @@ public class KnockbackController : MonoBehaviour
     [Tooltip("接地判定。未設定の場合は同じオブジェクトから自動取得する")]
     public GroundChecker groundChecker;
 
-    [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
-    public CharacterStats stats;
-
-    // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
-    private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
-
     [Header("衝突後の制御不能時間")]
     [Tooltip("吹っ飛び・押し負け直後、プレイヤー入力での移動を完全に無効化する時間（秒）。上げるほど長く操作できない")]
-    public FloatOverride knockbackLockDuration;
+    public float knockbackLockDuration = 1f;
 
     [Header("ノックバックの減衰")]
     [Tooltip("ノックバック速度が時間経過で0に近づく早さ。上げるほど早く収まる。下げるほど長く滑る")]
-    public FloatOverride knockbackDecaySpeed;
+    public float knockbackDecaySpeed = 4f;
 
     [Header("吹っ飛び中の落下")]
     [Tooltip("吹っ飛ばされて着地するまでの間、重力を何倍にするか。1=通常の重力。上げるほど速く落ちる")]
-    public FloatOverride knockbackGravityMultiplier;
+    public float knockbackGravityMultiplier = 3f;
 
     [Header("旧移動スクリプト用（MoveManagerTest）")]
     [Tooltip("この値以上のノックバック速度が残っている間だけ「空中制御弱体化」とみなす")]
-    public FloatOverride airControlKnockbackThreshold;
+    public float airControlKnockbackThreshold = 0.5f;
 
     [Header("効果音")]
     public AudioClip HitSound;
 
-    private float KnockbackLockDuration => knockbackLockDuration.Resolve(Stats.knockbackLockDuration);
-    private float KnockbackDecaySpeed => knockbackDecaySpeed.Resolve(Stats.knockbackDecaySpeed);
-    private float KnockbackGravityMultiplier => knockbackGravityMultiplier.Resolve(Stats.knockbackGravityMultiplier);
-    private float AirControlKnockbackThreshold => airControlKnockbackThreshold.Resolve(Stats.airControlKnockbackThreshold);
+    private float KnockbackLockDuration => knockbackLockDuration;
+    private float KnockbackDecaySpeed => knockbackDecaySpeed;
+    private float KnockbackGravityMultiplier => knockbackGravityMultiplier;
+    private float AirControlKnockbackThreshold => airControlKnockbackThreshold;
 
     private Rigidbody rb;
     private AudioSource audioSource;
@@ -73,9 +67,6 @@ public class KnockbackController : MonoBehaviour
     // 物理ステップ直前（＝衝突前）のRigidbody速度。ボタン加速中の勝者が「反発しなかった」ことにするために使う
     private Vector3 preStepVelocity = Vector3.zero;
 
-    // 着地検知用：前フレームの接地状態を記憶しておき、非接地→接地に変わった瞬間を捉える
-    private bool wasGroundedLastFrame = true;
-
     public Vector3 CurrentKnockbackVelocity => knockbackVelocity;
     public Vector3 PreStepVelocity => preStepVelocity;
 
@@ -96,7 +87,7 @@ public class KnockbackController : MonoBehaviour
         knockbackVelocity.sqrMagnitude > AirControlKnockbackThreshold * AirControlKnockbackThreshold;
 
     // 旧移動スクリプト用。TopDownPlayerMoveの空中制御はTopDownPlayerMove側のairControlMultiplierを使う
-    public float AirControlMultiplier => Stats.airControlMultiplier;
+    public float AirControlMultiplier => 0f;
 
     private void Awake()
     {
@@ -115,8 +106,6 @@ public class KnockbackController : MonoBehaviour
             groundChecker = GetComponent<GroundChecker>();
         }
 
-        wasGroundedLastFrame = IsGrounded;
-
         audioSource = GetComponent<AudioSource>();
     }
 
@@ -127,13 +116,8 @@ public class KnockbackController : MonoBehaviour
             knockbackLockTimer -= Time.deltaTime;
         }
 
-        // 着地検知：前フレームは空中で、今フレームで接地した瞬間にロックを強制解除する
+        // 入力ロックは着地しても解除しない（knockbackLockDurationの秒数ぶん、確実に入力を無効にする）
         bool isGroundedNow = IsGrounded;
-        if (isGroundedNow && !wasGroundedLastFrame)
-        {
-            knockbackLockTimer = 0f;
-        }
-        wasGroundedLastFrame = isGroundedNow;
 
         // 吹っ飛び状態：最低限の時間が過ぎたうえで着地したら終了する
         // （着地を検知できない場合でも、安全弁の時間を超えたら終了する）

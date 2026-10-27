@@ -9,34 +9,28 @@ public class TopDownPlayerMove : MonoBehaviour
 {
     public Vector3 JoyAccel;
 
-    [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
-    public CharacterStats stats;
-
-    // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
-    private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
-
     [Header("通常移動（接地中）")]
     [Tooltip("接地中の最大移動速度（m/s）。傾きが最大のときに到達する速さ。上げるほど速く走る")]
-    public FloatOverride groundMoveSpeed;
+    public float groundMoveSpeed = 50f;
 
     [Tooltip("接地中に入力方向へ加速する強さ。上げるほど目標速度に素早く届く（慣性が弱くなる）。下げるほど立ち上がりが重い")]
-    public FloatOverride groundAcceleration;
+    public float groundAcceleration = 2.5f;
 
     [Tooltip("入力を離した/逆向きに入力したときの減速量（速度/秒）。上げるほど早く止まる（慣性が弱くなる）。下げるほど滑る")]
-    public FloatOverride groundDeceleration;
+    public float groundDeceleration = 6f;
 
     [Header("空中制御")]
     [Tooltip("空中（接地していない間）の入力の効き具合。0=空中では入力で動けない（慣性のまま飛ぶ）/ 1=地上と同じ。" +
              "吹っ飛び中は別途ロックされるため、ここは歩いて落ちたときなどの通常移動中の空中に適用される。")]
-    public FloatOverride airControlMultiplier;
+    public float airControlMultiplier = 0f;
 
     [Header("速度の現在値")]
     public float currentSpeed = 0f;    // 現在の速度（実行時の確認用）
 
-    private float GroundMoveSpeed => groundMoveSpeed.Resolve(Stats.maxSpeed);
-    private float GroundAcceleration => groundAcceleration.Resolve(Stats.acceleration);
-    private float GroundDeceleration => groundDeceleration.Resolve(Stats.brakeSpeed);
-    public float AirControlMultiplier => Mathf.Clamp01(airControlMultiplier.Resolve(Stats.airControlMultiplier));
+    private float GroundMoveSpeed => groundMoveSpeed;
+    private float GroundAcceleration => groundAcceleration;
+    private float GroundDeceleration => groundDeceleration;
+    public float AirControlMultiplier => Mathf.Clamp01(airControlMultiplier);
 
     // 接地中の最大移動速度（ChargeDashControllerがダッシュ速度の基準にする）
     public float GroundMaxSpeed => GroundMoveSpeed;
@@ -58,6 +52,9 @@ public class TopDownPlayerMove : MonoBehaviour
     private bool wasKnockedBack = false;                  // 吹っ飛び開始の瞬間を検知するための前フレームの状態
     public bool IsKnockedBack => knockback != null && knockback.IsKnockedBack;   // ノックバック中フラグ（着地まで継続）
 
+    // 衝突後の入力無効期間（knockbackLockDurationの秒数ぶん。着地したかどうかでは解除されない）
+    public bool IsInputLocked => knockback != null && knockback.IsLocked;   // 時間だけで判定（接地・空中は関係ない）
+
     private ChargeDashController chargeDash;              // チャージ→ダッシュの担当（無くても動く）
 
     // 衝突の勝敗判定に使う「ダッシュ中」フラグ（実体はChargeDashController）
@@ -77,7 +74,7 @@ public class TopDownPlayerMove : MonoBehaviour
             rb = GetComponent<Rigidbody>();
         }
 
-        // 移動・ダッシュ・空中制御の値は、上のFloatOverride経由でCharacterStats（またはその上書き）から都度取得する
+        // 移動・空中制御の値は、上のInspector値をそのまま使う
 
         // 吹っ飛び状態の参照を取得しておく
         knockback = GetComponent<KnockbackController>();
@@ -94,9 +91,9 @@ public class TopDownPlayerMove : MonoBehaviour
     {
         TryAcquireJoyCon();
 
-        // 吹っ飛び中は入力による移動を止める。吹っ飛びが始まった瞬間だけ、移動の状態をリセットする
-        // （吹っ飛び状態の終了判定はKnockbackController側で行う）
-        if (IsKnockedBack)
+        // 吹っ飛び中・入力ロック中は入力による移動を止める。無効期間が始まった瞬間だけ、移動の状態をリセットする
+        // （吹っ飛び状態・ロックの終了判定はKnockbackController側で行う）
+        if (IsInputLocked)
         {
             if (!wasKnockedBack)
             {
@@ -233,7 +230,7 @@ public class TopDownPlayerMove : MonoBehaviour
         return JoyAccel.y;
     }
 
-    // 通常移動速度を返す（吹っ飛び中は入力由来の移動なし）
+    // 通常移動速度を返す（入力ロック中は入力由来の移動なし）
     public Vector3 GetNormalMoveVelocity()
     {
         if (IsKnockedBack) return Vector3.zero;
@@ -243,7 +240,7 @@ public class TopDownPlayerMove : MonoBehaviour
     // ダッシュによる追加速度を返す（実体はChargeDashController）
     public Vector3 GetDashVelocity()
     {
-        if (IsKnockedBack || chargeDash == null) return Vector3.zero;
+        if (IsInputLocked || chargeDash == null) return Vector3.zero;
         return chargeDash.GetDashVelocity();
     }
 

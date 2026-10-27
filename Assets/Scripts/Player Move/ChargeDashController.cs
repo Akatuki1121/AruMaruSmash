@@ -34,29 +34,29 @@ public class ChargeDashController : MonoBehaviour
     // インジケーターを接地面から浮かせる量（プレイヤー半径に対する割合。Z-fighting対策）
     private const float INDICATOR_LIFT_RATIO = 0.03f;
 
-    [Header("チャージ（「上書き」にチェックした項目以外はCharacterStatsの値を使う）")]
+    [Header("チャージ")]
     [Tooltip("最大チャージに必要な長押し時間（秒）")]
-    public FloatOverride chargeMaxTime;
+    public float chargeMaxTime = 2.5f;
 
     [Tooltip("チャージ中の最大移動速度の倍率（0〜1）。小さいほど遅い。0にすると進行方向を決められなくなる")]
-    public FloatOverride chargeMoveSpeedMultiplier;
+    public float chargeMoveSpeedMultiplier = 0.5f;
 
     [Tooltip("チャージ開始後、速度がチャージ中の上限まで落ちるときの減速の強さ（速度/秒）。切り返しにも使う")]
-    public FloatOverride chargeDeceleration;
+    public float chargeDeceleration = 15f;
 
     [Header("ダッシュ")]
     [Tooltip("チャージ0秒（ちょい押し）のダッシュ速度。通常の最大移動速度に対する倍率")]
-    public FloatOverride dashMinSpeedMultiplier;
+    public float dashMinSpeedMultiplier = 1.5f;
 
     [Tooltip("最大チャージのダッシュ速度。通常の最大移動速度に対する倍率")]
-    public FloatOverride dashMaxSpeedMultiplier;
+    public float dashMaxSpeedMultiplier = 3f;
 
     [Tooltip("ダッシュの持続時間（秒）。この時間をかけて速度が0に落ちる")]
-    public FloatOverride dashDuration;
+    public float dashDuration = 1f;
 
     [Header("ヒットストップ")]
     [Tooltip("最大チャージのダッシュで衝突したときに止める時間（秒・実時間）")]
-    public FloatOverride hitStopDuration;
+    public float hitStopDuration = 0.05f;
 
     [Header("インジケーター（足元のダッシュ方向）")]
     [Tooltip("未設定ならこのオブジェクトのMeshRendererのマテリアルを複製して使う。色はチャージ量で上書きされる")]
@@ -88,14 +88,13 @@ public class ChargeDashController : MonoBehaviour
     private float dashTotal = 1f;
     private bool hitStopPending;
 
-    private CharacterStats Stats => move.stats != null ? move.stats : CharacterStats.Fallback;
-    private float ChargeMaxTime => Mathf.Max(MIN_DURATION, chargeMaxTime.Resolve(Stats.chargeMaxTime));
-    private float ChargeMoveSpeedMultiplier => Mathf.Clamp01(chargeMoveSpeedMultiplier.Resolve(Stats.chargeMoveSpeedMultiplier));
-    private float ChargeDeceleration => Mathf.Max(0f, chargeDeceleration.Resolve(Stats.chargeDeceleration));
-    private float DashMinSpeedMultiplier => Mathf.Max(0f, dashMinSpeedMultiplier.Resolve(Stats.dashMinSpeedMultiplier));
-    private float DashMaxSpeedMultiplier => Mathf.Max(DashMinSpeedMultiplier, dashMaxSpeedMultiplier.Resolve(Stats.dashMaxSpeedMultiplier));
-    private float DashDuration => Mathf.Max(MIN_DURATION, dashDuration.Resolve(Stats.dashDuration));
-    private float HitStopDuration => Mathf.Max(0f, hitStopDuration.Resolve(Stats.hitStopDuration));
+    private float ChargeMaxTime => Mathf.Max(MIN_DURATION, chargeMaxTime);
+    private float ChargeMoveSpeedMultiplier => Mathf.Clamp01(chargeMoveSpeedMultiplier);
+    private float ChargeDeceleration => Mathf.Max(0f, chargeDeceleration);
+    private float DashMinSpeedMultiplier => Mathf.Max(0f, dashMinSpeedMultiplier);
+    private float DashMaxSpeedMultiplier => Mathf.Max(DashMinSpeedMultiplier, dashMaxSpeedMultiplier);
+    private float DashDuration => Mathf.Max(MIN_DURATION, dashDuration);
+    private float HitStopDuration => Mathf.Max(0f, hitStopDuration);
 
     // ===== 他のコンポーネントから読む状態 =====
 
@@ -149,8 +148,8 @@ public class ChargeDashController : MonoBehaviour
         bool held = ReadDashButtonHeld();
         if (!held) requireRelease = false;
 
-        // 吹っ飛ばされたら、チャージもダッシュも中断する（吹っ飛びが終わっても、一度離すまでは再チャージしない）
-        if (move.IsKnockedBack)
+        // 吹っ飛ばされたら（入力ロックが終わるまで）、チャージもダッシュも中断する（終わっても、一度離すまでは再チャージしない）
+        if (move.IsInputLocked)
         {
             if (phase != Phase.Idle) Cancel();
             requireRelease = held;

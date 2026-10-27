@@ -37,7 +37,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 20, y: 20, z: 20}
+  m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7700526565170483686}
@@ -161,19 +161,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
   JoyAccel: {x: 0, y: 0, z: 0}
-  stats: {fileID: 0}
-  groundMoveSpeed:
-    useOverride: 0
-    value: 0
-  groundAcceleration:
-    useOverride: 0
-    value: 0
-  groundDeceleration:
-    useOverride: 0
-    value: 0
-  airControlMultiplier:
-    useOverride: 0
-    value: 0
+  groundMoveSpeed: 50
+  groundAcceleration: 2.5
+  groundDeceleration: 10
+  airControlMultiplier: 0
   currentSpeed: 0
   rb: {fileID: 885649622215985095}
   tiltAmount: 0
@@ -204,19 +195,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
   groundChecker: {fileID: 4569837613208632187}
-  stats: {fileID: 0}
-  knockbackLockDuration:
-    useOverride: 0
-    value: 0
-  knockbackDecaySpeed:
-    useOverride: 0
-    value: 0
-  knockbackGravityMultiplier:
-    useOverride: 0
-    value: 0
-  airControlKnockbackThreshold:
-    useOverride: 0
-    value: 0
+  knockbackLockDuration: 1
+  knockbackDecaySpeed: 4
+  knockbackGravityMultiplier: 3
+  airControlKnockbackThreshold: 0.5
   HitSound: {fileID: 8300000, guid: da6422587b468cf4a90837e96914ce47, type: 3}
 --- !u!114 &1104409793882261765
 MonoBehaviour:
@@ -230,31 +212,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  stats: {fileID: 0}
-  asymmetryFactor:
-    useOverride: 0
-    value: 0
-  bounceForceMultiplier:
-    useOverride: 0
-    value: 0
-  upwardForcePerSpeed:
-    useOverride: 0
-    value: 0
-  minUpwardForce:
-    useOverride: 0
-    value: 0
-  maxUpwardForce:
-    useOverride: 0
-    value: 0
-  sameTargetCooldown:
-    useOverride: 0
-    value: 0
-  wallNormalYThreshold:
-    useOverride: 0
-    value: 0
-  wallMaxUpwardSpeed:
-    useOverride: 0
-    value: 0
+  asymmetryFactor: 0.85
+  bounceForceMultiplier: 1.5
+  upwardForcePerSpeed: 0.6
+  minUpwardForce: 1.5
+  maxUpwardForce: 8
+  sameTargetCooldown: 0.4
+  wallNormalYThreshold: 0.5
+  wallMaxUpwardSpeed: 0
+  wallBounceMultiplier: 1.2
   logWallContacts: 0
 --- !u!82 &-5905616833478383249
 AudioSource:
@@ -383,27 +349,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11a33d805ac992045ac7cab352b2dfea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChargeDashController
-  chargeMaxTime:
-    useOverride: 0
-    value: 0
-  chargeMoveSpeedMultiplier:
-    useOverride: 0
-    value: 0
-  chargeDeceleration:
-    useOverride: 0
-    value: 0
-  dashMinSpeedMultiplier:
-    useOverride: 0
-    value: 0
-  dashMaxSpeedMultiplier:
-    useOverride: 0
-    value: 0
-  dashDuration:
-    useOverride: 0
-    value: 0
-  hitStopDuration:
-    useOverride: 0
-    value: 0
+  chargeMaxTime: 2.5
+  chargeMoveSpeedMultiplier: 0.5
+  chargeDeceleration: 15
+  dashMinSpeedMultiplier: 1.5
+  dashMaxSpeedMultiplier: 3
+  dashDuration: 1
+  hitStopDuration: 0.05
   indicatorMaterial: {fileID: 0}
   indicatorColorMin: {r: 1, g: 1, b: 1, a: 1}
   indicatorColorMax: {r: 1, g: 0.25, b: 0.1, a: 1}
