@@ -4,6 +4,8 @@ public class CharacterChoiceUIManager : BaseUIManager
 {
     private ButtonManager button;
 
+    public GameObject selectPlayer;
+
     private const int MAX_V_SELECT = 1;
     private const int MAX_H_SELECT = 1;
     private const int MIN_V_SELECT = 0;
