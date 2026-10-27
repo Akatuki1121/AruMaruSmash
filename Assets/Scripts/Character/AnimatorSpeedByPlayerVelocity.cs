@@ -51,8 +51,7 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
     {
         if (movement == null || targetAnimator == null) return;
 
-        float baseSpeed = movement.groundMoveSpeed.Resolve(
-            movement.stats != null ? movement.stats.maxSpeed : CharacterStats.Fallback.maxSpeed);
+        float baseSpeed = movement.GroundMaxSpeed;
         float currentVelocity = movement.GetInputMoveVelocity().magnitude;
         targetAnimator.speed = baseSpeed > 0.001f && currentVelocity > 0f
             ? currentVelocity / baseSpeed

@@ -23,52 +23,49 @@ public class PlayerCollisionHandler : MonoBehaviour
     private KnockbackController knockbackController;
     private GroundChecker ground;
 
-    [Header("キャラクターデータ（各値のデフォルト。未設定ならコード上の初期値を使う）")]
-    public CharacterStats stats;
-
-    // 値の決定順：このコンポーネントの「上書き」がON → その値 / OFF → CharacterStatsの値
-    private CharacterStats Stats => stats != null ? stats : CharacterStats.Fallback;
-
     [Header("衝突反応（同質量の弾性衝突ベース）")]
     [Tooltip("0=完全に物理的な弾性衝突（法線成分を均等にSwap）/ 1=強い方は法線速度をほぼ変えず弱い方だけが強く飛ぶ（ゲーム的な非対称調整）。0〜1")]
-    public FloatOverride asymmetryFactor;
+    public float asymmetryFactor = 0.85f;
 
     [Tooltip("反発の勢い全体に対する倍率。上げるほど強く飛ばされる")]
-    public FloatOverride bounceForceMultiplier;
+    public float bounceForceMultiplier = 1.5f;
 
     [Header("吹っ飛び（上方向）")]
     [Tooltip("衝突の相対速度1あたりに加える上方向初速。上げるほど勢いのある衝突ほど高く浮く")]
-    public FloatOverride upwardForcePerSpeed;
+    public float upwardForcePerSpeed = 0.6f;
 
     [Tooltip("上方向初速の最小値（衝突さえすれば必ずこれくらいは浮く）")]
-    public FloatOverride minUpwardForce;
+    public float minUpwardForce = 1.5f;
 
     [Tooltip("上方向初速の最大値（暴れすぎ防止のクランプ）")]
-    public FloatOverride maxUpwardForce;
+    public float maxUpwardForce = 8f;
 
     [Header("同じ相手との再衝突防止")]
     [Tooltip("同じ相手と衝突した後、この時間内は同じ相手との衝突を無視する（秒）。" +
              "壁やギミックなど、PlayerCollisionHandlerを持たない相手との衝突には影響しない。")]
-    public FloatOverride sameTargetCooldown;
+    public float sameTargetCooldown = 0.4f;
 
     [Header("壁との衝突")]
     [Tooltip("接触面の法線のY成分の絶対値がこの値未満なら「壁」とみなす。0=完全に垂直な面のみ、大きいほど傾いた面も壁扱い。0〜1")]
-    public FloatOverride wallNormalYThreshold;
+    public float wallNormalYThreshold = 0.5f;
 
     [Tooltip("壁に接触している間、上向きの速度をこの値までに制限する。0=壁に当たっても上へは飛ばない。上げるほど上へ飛びやすい")]
-    public FloatOverride wallMaxUpwardSpeed;
+    public float wallMaxUpwardSpeed = 0f;
+
+    [Tooltip("壁に当たったときの横方向の跳ね返りの強さ。1=速度をそのまま反射（勢いは変わらない）。上げるほど強く跳ね返る")]
+    public float wallBounceMultiplier = 1.5f;
 
     [Tooltip("壁との接触で上向き速度を抑えたときにログを出す（原因調査用）")]
     public bool logWallContacts = false;
 
-    private float AsymmetryFactor => Mathf.Clamp01(asymmetryFactor.Resolve(Stats.asymmetryFactor));
-    private float BounceForceMultiplier => bounceForceMultiplier.Resolve(Stats.bounceForceMultiplier);
-    private float UpwardForcePerSpeed => upwardForcePerSpeed.Resolve(Stats.upwardForcePerSpeed);
-    private float MinUpwardForce => minUpwardForce.Resolve(Stats.minUpwardForce);
-    private float MaxUpwardForce => maxUpwardForce.Resolve(Stats.maxUpwardForce);
-    private float SameTargetCooldown => sameTargetCooldown.Resolve(Stats.sameTargetCooldown);
-    private float WallNormalYThreshold => Mathf.Clamp01(wallNormalYThreshold.Resolve(Stats.wallNormalYThreshold));
-    private float WallMaxUpwardSpeed => Mathf.Max(0f, wallMaxUpwardSpeed.Resolve(Stats.wallMaxUpwardSpeed));
+    private float AsymmetryFactor => Mathf.Clamp01(asymmetryFactor);
+    private float BounceForceMultiplier => bounceForceMultiplier;
+    private float UpwardForcePerSpeed => upwardForcePerSpeed;
+    private float MinUpwardForce => minUpwardForce;
+    private float MaxUpwardForce => maxUpwardForce;
+    private float SameTargetCooldown => sameTargetCooldown;
+    private float WallNormalYThreshold => Mathf.Clamp01(wallNormalYThreshold);
+    private float WallMaxUpwardSpeed => Mathf.Max(0f, wallMaxUpwardSpeed);
 
     // 直前にぶつかった相手とその時刻（ペアごとの無敵時間判定に使用）
     private PlayerCollisionHandler lastHitOther = null;
@@ -151,7 +148,7 @@ public class PlayerCollisionHandler : MonoBehaviour
             if (velocityTowardWall >= -0.01f) return;
 
             Vector3 reflectedVelocity = Vector3.Reflect(velocity, normal);
-            knockbackController.ApplyKnockback(reflectedVelocity - velocity);
+            knockbackController.ApplyKnockback((reflectedVelocity - velocity) * Mathf.Max(0f, wallBounceMultiplier));
             return;
         }
     }
