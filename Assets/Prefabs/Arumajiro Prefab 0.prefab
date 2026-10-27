@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 4698374951294873734}
   - component: {fileID: 2611717489495572929}
   m_Layer: 0
-  m_Name: TD Test Player A
+  m_Name: Arumajiro Prefab 0
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
