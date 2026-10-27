@@ -18,8 +18,8 @@ using UnityEngine;
 public class PlayerCollisionHandler : MonoBehaviour
 {
     // 参照（同じオブジェクトから自動取得する）
-    private MoveManagerTest moveManager;      // 旧移動スクリプト（無くても動く）
     private TopDownPlayerMove topDownMove;    // 実際の移動スクリプト
+    private ChargeDashController chargeDash;  // チャージ→ダッシュ（無くても動く）
     private KnockbackController knockbackController;
     private GroundChecker ground;
 
@@ -81,8 +81,8 @@ public class PlayerCollisionHandler : MonoBehaviour
 
     private void Awake()
     {
-        moveManager = GetComponent<MoveManagerTest>();
         topDownMove = GetComponent<TopDownPlayerMove>();
+        chargeDash = GetComponent<ChargeDashController>();
         knockbackController = GetComponent<KnockbackController>();
         ground = GetComponent<GroundChecker>();
         wasGroundedLastFrame = IsGrounded;
@@ -188,13 +188,17 @@ public class PlayerCollisionHandler : MonoBehaviour
         }
     }
 
-    // 衝突計算に使う「入力由来のXZ移動速度」。実際に動かしているTopDownPlayerMoveを優先し、
-    // 無い場合のみMoveManagerTestにフォールバックする
+    // 衝突計算に使う「入力由来のXZ移動速度」。実際に動かしているTopDownPlayerMoveから取得する
     private Vector3 GetCurrentMoveVelocity()
     {
         if (topDownMove != null) return topDownMove.GetInputMoveVelocity();
-        if (moveManager != null) return moveManager.GetInputMoveVelocity();
         return Vector3.zero;
+    }
+
+    // 最大チャージのダッシュ中なら、最初の1回だけヒットストップの長さ（秒）を返す。それ以外は0
+    private float ConsumeHitStopDuration()
+    {
+        return chargeDash != null ? chargeDash.ConsumeHitStopDuration() : 0f;
     }
 
     // ボタン加速中の勝敗判定。必ずどちらかを勝者にする。
@@ -244,6 +248,10 @@ public class PlayerCollisionHandler : MonoBehaviour
         Vector3 velA = a.GetCurrentMoveVelocity() + a.knockbackController.CurrentKnockbackVelocity;
         Vector3 velB = b.GetCurrentMoveVelocity() + b.knockbackController.CurrentKnockbackVelocity;
 
+        // 最大チャージのダッシュでぶつかったときは、1回だけヒットストップを入れる
+        float hitStopDuration = Mathf.Max(a.ConsumeHitStopDuration(), b.ConsumeHitStopDuration());
+        if (hitStopDuration > 0f) HitStop.Request(hitStopDuration);
+
         // ボタン加速中の衝突は、必ず勝敗を決める（勝者は反発せず、敗者だけが吹っ飛ぶ）
         bool aAttack = a.topDownMove != null && a.topDownMove.IsAttack;
         bool bAttack = b.topDownMove != null && b.topDownMove.IsAttack;
@@ -263,7 +271,7 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         // ゲーム的な非対称調整：実際に今動いている速さが大きい方は法線速度の変化を抑え、
         // 弱い方（遅い方・止まっている方）だけが強く飛ばされるようにブレンドする
-        // ※設定上のspeed（moveManager.speed）ではなく、実際の現在の速度の大きさを使う。
+        // ※設定上のspeedではなく、実際の現在の速度の大きさを使う。
         //   設定値を使うと「止まっている相手」と「全力で動いている相手」が同じspeed設定の場合に
         //   誤って「互角」と判定されてしまうため。
         float speedA = velA.magnitude;
