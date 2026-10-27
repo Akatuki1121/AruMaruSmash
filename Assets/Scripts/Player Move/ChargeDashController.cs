@@ -62,7 +62,7 @@ public class ChargeDashController : MonoBehaviour
     [Tooltip("未設定ならこのオブジェクトのMeshRendererのマテリアルを複製して使う。色はチャージ量で上書きされる")]
     public Material indicatorMaterial;
     public Color indicatorColorMin = Color.white;
-    public Color indicatorColorMax = new Color(1f, 0.25f, 0.1f, 1f);
+    public Color indicatorColorMax = new(1f, 0.25f, 0.1f, 1f);
 
     [Tooltip("チャージ0秒のときの長さ（プレイヤー半径の何倍か。球体の中心から測る）")]
     [Min(0f)] public float indicatorMinLength = 1.6f;
