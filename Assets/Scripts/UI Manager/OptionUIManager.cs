@@ -4,13 +4,14 @@ public class OptionUIManager : BaseUIManager
 {
     private ButtonManager button;
 
-    private const int MAX_V_SELECT = 1;
-    private const int MAX_H_SELECT = 1;
+    public GameObject UIManager;
+    public GameObject OptionUI;
+    public GameObject HowToPlayUI;
+
+    private const int MAX_V_SELECT = 3;
     private const int MIN_V_SELECT = 0;
-    private const int MIN_H_SELECT = 0;
 
     private int selectV = 0;
-    private int selectH = 0;
 
     private UIInputDirection previousDirection = UIInputDirection.None;
 
@@ -39,37 +40,46 @@ public class OptionUIManager : BaseUIManager
                     selectV++;
                     break;
 
-                case UIInputDirection.Left:
-                    selectH--;
-                    break;
+                // 横入力でもUI操作いるのかな？
+                //case UIInputDirection.Left:
+                //    selectV--;
+                //    break;
 
-                case UIInputDirection.Right:
-                    selectH++;
-                    break;
+                //case UIInputDirection.Right:
+                //    selectV++;
+                //    break;
             }
 
             selectV = Mathf.Clamp(selectV, MIN_V_SELECT, MAX_V_SELECT);
-            selectH = Mathf.Clamp(selectH, MIN_H_SELECT, MAX_H_SELECT);
         }
 
         previousDirection = direction;
 
         if (!GetButtonDown()) return;
 
-        if (selectV == 0 && selectH == 0)
+        if (selectV == 0)
         {
-            button.OnStartClicked();
+            HowToPlayUI.SetActive(true);
+            OptionUI.SetActive(false);
+
+            button.OnHowToPlayClicked();
         }
-        else if (selectV == 1 && selectH == 0)
+        else if (selectV == 1)
         {
-            button.OnOptionClicked();
+            // BGMスライダー操作
         }
-        else if (selectV == 1 && selectH == 1)
+        else if (selectV == 2)
         {
-            button.OnQuitClicked();
+            // SEスライダー操作
+        }
+        else if(selectV == 3)
+        {
+            UIManager.SetActive(true);
+            OptionUI.SetActive(false);
+
+            button.OnBackTitleClicked();
         }
 
-        Debug.Log($"縦の選択は：{selectV}");
-        Debug.Log($"横の選択は：{selectH}");
+            Debug.Log($"Optionの選択は：{selectV}");
     }
 }

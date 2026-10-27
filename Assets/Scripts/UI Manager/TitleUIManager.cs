@@ -4,6 +4,9 @@ public class TitleUIManager : BaseUIManager
 {
     private ButtonManager button;
 
+    public GameObject UIManager;
+    public GameObject OptionUI;
+
     private const int MAX_V_SELECT = 1;
     private const int MAX_H_SELECT = 1;
     private const int MIN_V_SELECT = 0;
@@ -62,6 +65,8 @@ public class TitleUIManager : BaseUIManager
         }
         else if (selectV == 1 && selectH == 0)
         {
+            UIManager.SetActive(false);
+            OptionUI.SetActive(true);
             button.OnOptionClicked();
         }
         else if (selectV == 1 && selectH == 1)
@@ -69,7 +74,7 @@ public class TitleUIManager : BaseUIManager
             button.OnQuitClicked();
         }
 
-        Debug.Log($"縦の選択は：{selectV}");
-        Debug.Log($"横の選択は：{selectH}");
+        Debug.Log($"Title縦の選択は：{selectV}");
+        Debug.Log($"Title横の選択は：{selectH}");
     }
 }
