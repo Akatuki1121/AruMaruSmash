@@ -32,7 +32,7 @@ public class ChargeDashController : MonoBehaviour
     // 最大チャージ時間・ダッシュ持続時間の下限（0除算回避）
     private const float MIN_DURATION = 0.01f;
     // インジケーターを接地面から浮かせる量（プレイヤー半径に対する割合。Z-fighting対策）
-    private const float INDICATOR_LIFT_RATIO = 0.03f;
+    private const float INDICATOR_LIFT_RATIO = 0.05f;
 
     [Header("チャージ")]
     [Tooltip("最大チャージに必要な長押し時間（秒）")]
@@ -59,12 +59,12 @@ public class ChargeDashController : MonoBehaviour
     public float hitStopDuration = 0.05f;
 
     [Header("インジケーター（足元のダッシュ方向）")]
-    [Tooltip("未設定ならこのオブジェクトのMeshRendererのマテリアルを複製して使う。色はチャージ量で上書きされる")]
+    [Tooltip("未設定なら、ライティングの影響を受けない単色のマテリアルを使う。色はチャージ量で上書きされる")]
     public Material indicatorMaterial;
     public Color indicatorColorMin = Color.white;
     public Color indicatorColorMax = new(1f, 0.25f, 0.1f, 1f);
 
-    [Tooltip("チャージ0秒のときの長さ（プレイヤー半径の何倍か。球体の中心から測る）")]
+    [Tooltip("チャージ0秒のときの長さ（プレイヤー半径の何倍か。球体の端から測る）")]
     [Min(0f)] public float indicatorMinLength = 1.6f;
 
     [Tooltip("最大チャージのときの長さ（プレイヤー半径の何倍か）")]
@@ -72,6 +72,12 @@ public class ChargeDashController : MonoBehaviour
 
     [Tooltip("矢印の幅（プレイヤー半径の何倍か。頭の半幅）")]
     [Min(0f)] public float indicatorWidth = 0.5f;
+
+    [Tooltip("矢印の縁取りの色。明るい床や赤い背景でも矢印が見えるようにする。アルファ0で縁取りなし")]
+    public Color indicatorOutlineColor = new(0f, 0f, 0f, 0.75f);
+
+    [Tooltip("縁取りの太さ（プレイヤー半径の何倍か）")]
+    [Min(0f)] public float indicatorOutlineWidth = 0.12f;
 
     private TopDownPlayerMove move;
     private SphereCollider sphere;
@@ -194,7 +200,8 @@ public class ChargeDashController : MonoBehaviour
         float halfWidth = radius * indicatorWidth;
         Color color = Color.Lerp(indicatorColorMin, indicatorColorMax, ratio);
 
-        indicator.Show(groundPoint + (groundNormal * radius * INDICATOR_LIFT_RATIO), groundNormal, aimDirection, length, halfWidth, color);
+        // 矢印は球体の端から始める（中心から始めると、球体の下に隠れて見えない部分ができる）
+        indicator.Show(groundPoint + (groundNormal * radius * INDICATOR_LIFT_RATIO), groundNormal, aimDirection, radius, length, halfWidth, color, indicatorOutlineColor, radius * Mathf.Max(0f, indicatorOutlineWidth));
     }
 
     private void OnDisable()
@@ -296,84 +303,81 @@ public class ChargeDashController : MonoBehaviour
 
     private DashIndicator CreateIndicator()
     {
-        Material source = indicatorMaterial;
-        bool useOwnMaterial = source != null;
-        if (source == null)
-        {
-            MeshRenderer ownRenderer = GetComponent<MeshRenderer>();
-            if (ownRenderer != null) source = ownRenderer.sharedMaterial;
-        }
-
-        return new DashIndicator($"DashIndicator ({name})", source, !useOwnMaterial);
+        return new DashIndicator($"DashIndicator ({name})", indicatorMaterial);
     }
 
     /// <summary>
     /// 足元に置く、ダッシュ方向の矢印。プレイヤーの子にすると巨大スケールや回転の影響を受けるため、
     /// 独立したオブジェクトとして毎フレーム位置を合わせる。
+    /// 縁取り（暗い矢印）を一回り大きく後ろに描いて、床や背景の色に関係なく見えるようにする。
     /// </summary>
     private sealed class DashIndicator
     {
         private static readonly string[] ColorPropertyNames = { "_BaseColor", "_Color" };
-        private static readonly string[] TexturePropertyNames = { "_BaseMap", "_MainTex" };
+        private static readonly int[] Triangles = { 0, 1, 2, 0, 2, 3, 4, 5, 6 }; // 真上から見て時計回り（表）。シャフト2枚＋矢じり1枚
+
+        // 縁取りを先に、矢印本体を後に描く
+        private const int OUTLINE_RENDER_QUEUE = 3000;
+        private const int FILL_RENDER_QUEUE = 3001;
+        // 縁取りの矢じりは、先端が尖っているぶん太さより長く伸ばす
+        private const float OUTLINE_TIP_SCALE = 2.2f;
+        private const float OUTLINE_HEAD_WIDTH_SCALE = 1.6f;
 
         private readonly GameObject root;
-        private readonly Mesh mesh;
-        private readonly Material material;
-        private readonly Vector3[] vertices = new Vector3[7];
+        private readonly Mesh fillMesh;
+        private readonly Material fillMaterial;
+        private readonly GameObject outlineRoot;
+        private readonly Mesh outlineMesh;
+        private readonly Material outlineMaterial;
+        private readonly Vector3[] fillVertices = new Vector3[7];
+        private readonly Vector3[] outlineVertices = new Vector3[7];
 
-        public DashIndicator(string objectName, Material source, bool stripTextures)
+        public DashIndicator(string objectName, Material source)
         {
             root = new GameObject(objectName);
             root.hideFlags = HideFlags.DontSave;
 
-            mesh = new Mesh { name = objectName };
-            mesh.MarkDynamic();
-            mesh.vertices = vertices;
-            // 真上から見て時計回り（表）。シャフト2枚＋矢じり1枚
-            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3, 4, 5, 6 };
-            mesh.normals = new[]
-            {
-                Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up,
-            };
+            fillMesh = CreateMesh(objectName, fillVertices);
+            fillMaterial = source != null ? new Material(source) : new Material(Shader.Find("Sprites/Default"));
+            fillMaterial.renderQueue = FILL_RENDER_QUEUE;
+            AddRenderer(root, fillMesh, fillMaterial);
 
-            if (source != null)
+            Shader unlit = Shader.Find("Sprites/Default");
+            if (unlit != null)
             {
-                material = new Material(source);
-                if (stripTextures)
-                {
-                    // 元マテリアルのテクスチャが、UVの無い矢印に乗らないようにする
-                    foreach (string propertyName in TexturePropertyNames)
-                    {
-                        if (material.HasProperty(propertyName)) material.SetTexture(propertyName, null);
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning("DashIndicator: マテリアルが見つからないため、Sprites/Defaultで代用します。インジケーターのマテリアルを設定してください。");
-                material = new Material(Shader.Find("Sprites/Default"));
-            }
+                outlineRoot = new GameObject($"{objectName} Outline");
+                outlineRoot.hideFlags = HideFlags.DontSave;
+                outlineRoot.transform.SetParent(root.transform, false);
 
-            root.AddComponent<MeshFilter>().sharedMesh = mesh;
-            MeshRenderer meshRenderer = root.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = material;
-            meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            meshRenderer.receiveShadows = false;
+                outlineMesh = CreateMesh($"{objectName} Outline", outlineVertices);
+                outlineMaterial = new Material(unlit);
+                outlineMaterial.renderQueue = OUTLINE_RENDER_QUEUE;
+                AddRenderer(outlineRoot, outlineMesh, outlineMaterial);
+            }
 
             root.SetActive(false);
         }
 
-        public void Show(Vector3 position, Vector3 groundNormal, Vector3 aimDirection, float length, float halfWidth, Color color)
+        // startOffset: 矢印の根元の位置（原点＝球体の中心の真下から前方への距離）。length: そこからの長さ
+        public void Show(Vector3 position, Vector3 groundNormal, Vector3 aimDirection, float startOffset, float length, float halfWidth, Color color, Color outlineColor, float outlineThickness)
         {
             Vector3 forward = Vector3.ProjectOnPlane(aimDirection, groundNormal);
             if (forward.sqrMagnitude < DIRECTION_EPSILON) forward = aimDirection;
 
             root.transform.SetPositionAndRotation(position, Quaternion.LookRotation(forward.normalized, groundNormal));
-            UpdateMesh(length, halfWidth);
 
-            foreach (string propertyName in ColorPropertyNames)
+            UpdateFillMesh(startOffset, length, halfWidth);
+            SetColor(fillMaterial, color);
+
+            bool showOutline = outlineRoot != null && outlineColor.a > 0f && outlineThickness > 0f;
+            if (outlineRoot != null)
             {
-                if (material.HasProperty(propertyName)) material.SetColor(propertyName, color);
+                if (outlineRoot.activeSelf != showOutline) outlineRoot.SetActive(showOutline);
+                if (showOutline)
+                {
+                    UpdateOutlineMesh(startOffset, length, halfWidth, outlineThickness);
+                    SetColor(outlineMaterial, outlineColor);
+                }
             }
 
             if (!root.activeSelf) root.SetActive(true);
@@ -386,28 +390,84 @@ public class ChargeDashController : MonoBehaviour
 
         public void Destroy()
         {
-            if (root != null) Object.Destroy(root);
-            if (mesh != null) Object.Destroy(mesh);
-            if (material != null) Object.Destroy(material);
+            if (root != null) Object.Destroy(root); // 縁取りは子なので一緒に消える
+            if (fillMesh != null) Object.Destroy(fillMesh);
+            if (fillMaterial != null) Object.Destroy(fillMaterial);
+            if (outlineMesh != null) Object.Destroy(outlineMesh);
+            if (outlineMaterial != null) Object.Destroy(outlineMaterial);
         }
 
-        // 原点（球体の中心の真下）からZ+方向へ length の矢印。矢じりの長さは幅から決める
-        private void UpdateMesh(float length, float halfWidth)
+        private static Mesh CreateMesh(string meshName, Vector3[] vertices)
+        {
+            Mesh mesh = new() { name = meshName };
+            mesh.MarkDynamic();
+            mesh.vertices = vertices;
+            mesh.triangles = Triangles;
+            mesh.normals = new[]
+            {
+                Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up, Vector3.up,
+            };
+            return mesh;
+        }
+
+        private static void AddRenderer(GameObject target, Mesh mesh, Material material)
+        {
+            target.AddComponent<MeshFilter>().sharedMesh = mesh;
+            MeshRenderer meshRenderer = target.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterial = material;
+            meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            meshRenderer.receiveShadows = false;
+        }
+
+        private static void SetColor(Material material, Color color)
+        {
+            foreach (string propertyName in ColorPropertyNames)
+            {
+                if (material.HasProperty(propertyName)) material.SetColor(propertyName, color);
+            }
+        }
+
+        // 根元(z=startOffset)から先端(z=startOffset+length)までの矢印。矢じりの長さは幅から決める
+        private void UpdateFillMesh(float startOffset, float length, float halfWidth)
         {
             float shaftHalfWidth = halfWidth * 0.5f;
+            float tip = startOffset + length;
             float headLength = Mathf.Min(length * 0.45f, halfWidth * 2.2f);
-            float shaftEnd = length - headLength;
+            float shaftEnd = tip - headLength;
 
-            vertices[0] = new Vector3(-shaftHalfWidth, 0f, 0f);
-            vertices[1] = new Vector3(-shaftHalfWidth, 0f, shaftEnd);
-            vertices[2] = new Vector3(shaftHalfWidth, 0f, shaftEnd);
-            vertices[3] = new Vector3(shaftHalfWidth, 0f, 0f);
-            vertices[4] = new Vector3(-halfWidth, 0f, shaftEnd);
-            vertices[5] = new Vector3(0f, 0f, length);
-            vertices[6] = new Vector3(halfWidth, 0f, shaftEnd);
+            fillVertices[0] = new Vector3(-shaftHalfWidth, 0f, startOffset);
+            fillVertices[1] = new Vector3(-shaftHalfWidth, 0f, shaftEnd);
+            fillVertices[2] = new Vector3(shaftHalfWidth, 0f, shaftEnd);
+            fillVertices[3] = new Vector3(shaftHalfWidth, 0f, startOffset);
+            fillVertices[4] = new Vector3(-halfWidth, 0f, shaftEnd);
+            fillVertices[5] = new Vector3(0f, 0f, tip);
+            fillVertices[6] = new Vector3(halfWidth, 0f, shaftEnd);
 
-            mesh.vertices = vertices;
-            mesh.RecalculateBounds();
+            fillMesh.vertices = fillVertices;
+            fillMesh.RecalculateBounds();
+        }
+
+        // 本体の矢印を thickness ぶん一回り大きくしたもの
+        private void UpdateOutlineMesh(float startOffset, float length, float halfWidth, float thickness)
+        {
+            float shaftHalfWidth = (halfWidth * 0.5f) + thickness;
+            float headHalfWidth = halfWidth + (thickness * OUTLINE_HEAD_WIDTH_SCALE);
+            float tip = startOffset + length;
+            float headLength = Mathf.Min(length * 0.45f, halfWidth * 2.2f);
+            float shaftEnd = tip - headLength;
+            float baseZ = startOffset - thickness;
+            float headBaseZ = shaftEnd - thickness;
+
+            outlineVertices[0] = new Vector3(-shaftHalfWidth, 0f, baseZ);
+            outlineVertices[1] = new Vector3(-shaftHalfWidth, 0f, shaftEnd);
+            outlineVertices[2] = new Vector3(shaftHalfWidth, 0f, shaftEnd);
+            outlineVertices[3] = new Vector3(shaftHalfWidth, 0f, baseZ);
+            outlineVertices[4] = new Vector3(-headHalfWidth, 0f, headBaseZ);
+            outlineVertices[5] = new Vector3(0f, 0f, tip + (thickness * OUTLINE_TIP_SCALE));
+            outlineVertices[6] = new Vector3(headHalfWidth, 0f, headBaseZ);
+
+            outlineMesh.vertices = outlineVertices;
+            outlineMesh.RecalculateBounds();
         }
     }
 }
