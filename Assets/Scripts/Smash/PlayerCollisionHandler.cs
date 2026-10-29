@@ -102,6 +102,7 @@ public class PlayerCollisionHandler : MonoBehaviour
         if (other == null)
         {
             // 壁・ギミック等、プレイヤーでない相手：壁なら強く跳ね返し、上向き速度も抑える
+            NotifyWallHitBreaker(collision);
             BounceOffWall(collision);
             SuppressUpwardVelocityAgainstWall(collision);
             return;
@@ -122,6 +123,16 @@ public class PlayerCollisionHandler : MonoBehaviour
         lastHitTime = Time.time;
         other.lastHitOther = this;
         other.lastHitTime = Time.time;
+    }
+
+    // ぶつかった相手が回数で壊れる壁なら、ヒットを通知する
+    private void NotifyWallHitBreaker(Collision collision)
+    {
+        WallHitBreaker hitBreaker = collision.collider.GetComponent<WallHitBreaker>();
+        if (hitBreaker != null)
+        {
+            hitBreaker.RegisterHit(collision.relativeVelocity.magnitude);
+        }
     }
 
     private void BounceOffWall(Collision collision)
