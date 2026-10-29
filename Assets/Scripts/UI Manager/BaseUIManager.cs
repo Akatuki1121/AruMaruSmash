@@ -13,7 +13,7 @@ public enum UIInputDirection
 public class BaseUIManager : MonoBehaviour
 {
     // 決定ボタン
-    public bool GetButtonDown()
+    public bool GetConfirmButtonDown()
     {
         // Joy-Con管理クラスが存在しなければ何もしない
         if (JoyconManager.Instance == null) return false;
@@ -33,6 +33,34 @@ public class BaseUIManager : MonoBehaviour
             else
             {
                 if (joycon.GetButtonDown(Joycon.Button.DPAD_UP))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    // キャンセルボタン
+    public bool GetCancelButtonDown()
+    {
+        // Joy-Con管理クラスが存在しなければ何もしない
+        if (JoyconManager.Instance == null) return false;
+        if (JoyconManager.Instance.j == null) return false;
+
+        // 接続中のJoy-Conを順番に確認
+        foreach (Joycon joycon in JoyconManager.Instance.j)
+        {
+            if (joycon == null) continue;
+
+            // 横持ち時の右側に当たるボタンを取得
+            if (joycon.isLeft)
+            {
+                if (joycon.GetButtonDown(Joycon.Button.DPAD_LEFT))
+                    return true;
+            }
+            else
+            {
+                if (joycon.GetButtonDown(Joycon.Button.DPAD_RIGHT))
                     return true;
             }
         }

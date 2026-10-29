@@ -18,7 +18,7 @@ public class HowToPlayUIManager : BaseUIManager
     {
         if (button == null) return;
 
-        if (GetButtonDown())
+        if (GetConfirmButtonDown())
         {
             HowToPlayUI.SetActive(false);
             OptionUI.SetActive(true);

@@ -55,7 +55,7 @@ public class OptionUIManager : BaseUIManager
 
         previousDirection = direction;
 
-        if (!GetButtonDown()) return;
+        if (!GetConfirmButtonDown()) return;
 
         if (selectV == 0)
         {

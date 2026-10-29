@@ -57,7 +57,7 @@ public class TitleUIManager : BaseUIManager
 
         previousDirection = direction;
 
-        if (!GetButtonDown()) return;
+        if (!GetConfirmButtonDown()) return;
 
         if (selectV == 0 && selectH == 0)
         {
