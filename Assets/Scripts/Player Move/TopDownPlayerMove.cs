@@ -181,7 +181,7 @@ public class TopDownPlayerMove : MonoBehaviour
 
         Debug.Log($"{gameObject.name} (Index:{joyconIndex}) のAccel: {JoyAccel}");
 
-        const float deadZone = 0.2f;
+        const float deadZone = 0.1f;
 
         // 傾きをそのまま方向成分として使う（360度）
         float moveX = JoyAccel.x;
