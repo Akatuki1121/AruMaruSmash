@@ -12,10 +12,10 @@ public class WallTimeSequencer : MonoBehaviour
     public Transform center;
 
     [Tooltip("最初の壁が消えるまでの秒数")]
-    [Min(0f)] public float startDelay = 20f;
+    [Min(0f)] public float startDelay = 30f;
 
     [Tooltip("次の壁が消えるまでの間隔(秒)")]
-    [Min(0.1f)] public float interval = 10f;
+    [Min(0.1f)] public float interval = 30f;
 
     [Tooltip("ONなら |x|,|z| の大きい壁(外側)から、OFFなら小さい壁(内側)から順に消す")]
     public bool outerFirst = true;
