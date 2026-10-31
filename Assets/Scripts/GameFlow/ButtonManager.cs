@@ -26,10 +26,21 @@ public class ButtonManager : MonoBehaviour
         GameFlowManager.Instance?.Request(GameEvent.StartGame);
     }
 
+    // リーダー限定の遷移（リザルト・ポーズ等）に渡す操作者。
+    // slot を渡さないとリーダー判定に通らず遷移できないため、UI操作はリーダーの操作として扱う
+    private static int LeaderSlot
+    {
+        get
+        {
+            GameFlowManager flow = GameFlowManager.Instance;
+            return flow != null ? flow.Players.LeaderIndex : -1;
+        }
+    }
+
     // titleに戻るボタンが押されたときの処理
     public void OnBackTitleClicked()
     {
-        GameFlowManager.Instance?.Request(GameEvent.ToTitle);
+        GameFlowManager.Instance?.Request(GameEvent.ToTitle, LeaderSlot);
     }
 
     // 設定ボタンが押されたときの処理
@@ -83,6 +94,6 @@ public class ButtonManager : MonoBehaviour
     // リトライボタンが押されたときの処理
     public void OnRetryClicked()
     {
-        GameFlowManager.Instance?.Request(GameEvent.Retry);
+        GameFlowManager.Instance?.Request(GameEvent.Retry, LeaderSlot);
     }
 }

@@ -30,7 +30,7 @@ public class WallTimeSequencer : MonoBehaviour
 
     private void AssignBreakTimes()
     {
-        WallTimeBreaker[] breakers = FindObjectsByType<WallTimeBreaker>(FindObjectsSortMode.None);
+        WallTimeBreaker[] breakers = FindObjectsByType<WallTimeBreaker>();
         if (breakers.Length == 0) return;
 
         Vector3 origin = center != null ? center.position : Vector3.zero;
