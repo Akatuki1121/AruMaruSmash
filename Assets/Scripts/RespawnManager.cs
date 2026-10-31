@@ -11,6 +11,7 @@ public class RespawnManager: MonoBehaviour
 
     private void Start()
     {
+        MatchStats.Reset();
         for (int i = 0;i < Players.Length; i++)
         {
             Respawn(i);
@@ -31,6 +32,7 @@ public class RespawnManager: MonoBehaviour
             // index‚ð“Ç‚ÝŽæ‚Á‚Ä‚¨‚­
             int id = playerScript.joyconIndex;
             Debug.Log($"ƒvƒŒƒCƒ„[ {id} ‚ªŽ€‚ñ‚¾‚ ");
+            MatchStats.RegisterFall(id);
             Destroy(collider.gameObject);
             Respawn(id);
         }

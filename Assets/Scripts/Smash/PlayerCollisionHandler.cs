@@ -76,6 +76,9 @@ public class PlayerCollisionHandler : MonoBehaviour
 
     private bool IsGrounded => ground != null && ground.IsGrounded;
 
+    // 撃墜の記録（MatchStats）に使うプレイヤー番号。RespawnManager と同じ joyconIndex
+    private int PlayerId => topDownMove != null ? topDownMove.joyconIndex : -1;
+
     private void Awake()
     {
         topDownMove = GetComponent<TopDownPlayerMove>();
@@ -227,6 +230,10 @@ public class PlayerCollisionHandler : MonoBehaviour
     {
         bool aWins = DecideAttackWinner(velA.magnitude, velB.magnitude, aAttack, bAttack);
         PlayerCollisionHandler loser = aWins ? b : a;
+        PlayerCollisionHandler winner = aWins ? a : b;
+
+        // 勝者が敗者を飛ばした（敗者が落ちたら勝者の「落とした」になる）
+        MatchStats.RegisterHit(winner.PlayerId, loser.PlayerId);
         Vector3 winnerVel = aWins ? velA : velB;
         Vector3 loserVel = aWins ? velB : velA;
 
@@ -310,6 +317,10 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         a.knockbackController.ApplyKnockback((resultVelA - velA) * a.BounceForceMultiplier);
         b.knockbackController.ApplyKnockback((resultVelB - velB) * a.BounceForceMultiplier);
+
+        // お互いに押し合った扱い。どちらが先に落ちても、直前に触れた相手が「落とした」側になる
+        MatchStats.RegisterHit(a.PlayerId, b.PlayerId);
+        MatchStats.RegisterHit(b.PlayerId, a.PlayerId);
 
         // 吹っ飛び（上方向）：衝突の勢い＝法線方向の相対速度の大きさに応じて決める
         float closingSpeed = Mathf.Abs(velA_n - velB_n);
