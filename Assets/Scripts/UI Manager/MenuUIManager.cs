@@ -37,14 +37,17 @@ public class MenuUIManager : MonoBehaviour
     {
         Debug.Log($"[MenuUIManager] {from} -> {to}");
 
+        // 別シーンへ遷移するときは、現在のUIをそのまま残す
+        if (to != GameState.Title &&
+            to != GameState.Option &&
+            to != GameState.OperationGuide &&
+            to != GameState.Settings)
+        {
+            return;
+        }
+
         titleCanvas.SetActive(to == GameState.Title);
         optionCanvas.SetActive(to == GameState.Option);
         howToPlayCanvas.SetActive(to == GameState.OperationGuide);
-
-        Debug.Log(
-            $"Title: {titleCanvas.activeSelf}, " +
-            $"Option: {optionCanvas.activeSelf}, " +
-            $"HowToPlay: {howToPlayCanvas.activeSelf}"
-        );
     }
 }

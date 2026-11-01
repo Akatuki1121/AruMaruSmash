@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class TitleUIManager : BaseUIManager
 {
@@ -24,6 +25,15 @@ public class TitleUIManager : BaseUIManager
 
     private void Update()
     {
+        if (Keyboard.current != null &&
+    Keyboard.current.f1Key.wasPressedThisFrame)
+        {
+            Debug.Log(
+                $"TitleCanvas: {transform.parent.gameObject.activeInHierarchy}, " +
+                $"TitleUIManager: {gameObject.activeInHierarchy}"
+            );
+        }
+
         if (button == null) return;
 
         UIInputDirection direction = GetStick();
