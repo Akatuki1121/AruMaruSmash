@@ -374,6 +374,7 @@ public class GameFlowManager : MonoBehaviour
             return;
         }
         Players.slots[slot].isCharacterConfirmed = true;
+        Players.slots[slot].hasConfirmedReady = true;
         Players.NotifyChanged();
     }
 
@@ -387,6 +388,7 @@ public class GameFlowManager : MonoBehaviour
             return;
         }
         Players.slots[slot].isCharacterConfirmed = false;
+        Players.slots[slot].hasConfirmedReady = false;
         Players.NotifyChanged();
     }
 

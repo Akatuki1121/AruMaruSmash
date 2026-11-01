@@ -165,7 +165,8 @@ public class PlayerRegistry
 
     public bool AllConfirmed
     {
-        get { return AllActive(p => p.hasConfirmedReady); }
+        get { return ActiveCount > 0 && ActivePlayers.All(p => p.hasConfirmedReady);
+        }
     }
 
     // ---- リセット ----

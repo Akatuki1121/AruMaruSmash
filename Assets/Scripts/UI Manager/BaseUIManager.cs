@@ -1,4 +1,4 @@
-using NUnit.Framework.Constraints;
+
 using UnityEngine;
 
 public enum UIInputDirection
@@ -12,180 +12,226 @@ public enum UIInputDirection
 
 public class BaseUIManager : MonoBehaviour
 {
+    // ========================================
     // 決定ボタン
+    // ========================================
+
+    // どのJoy-Conでも決定可能
     public bool GetConfirmButtonDown()
     {
-        // Joy-Con管理クラスが存在しなければ何もしない
-        if (JoyconManager.Instance == null) return false;
-        if (JoyconManager.Instance.j == null) return false;
+        if (!HasJoycons()) return false;
 
-        // 接続中のJoy-Conを順番に確認
-        foreach (Joycon joycon in JoyconManager.Instance.j)
+        for (int i = 0; i < JoyconManager.Instance.j.Count; i++)
         {
-            if (joycon == null) continue;
-
-            // 横持ち時の右側に当たるボタンを取得
-            if (joycon.isLeft)
-            {
-                if (joycon.GetButtonDown(Joycon.Button.DPAD_DOWN))
-                    return true;
-            }
-            else
-            {
-                if (joycon.GetButtonDown(Joycon.Button.DPAD_UP))
-                    return true;
-            }
+            if (GetConfirmButtonDown(i))
+                return true;
         }
 
         return false;
     }
 
+    // 指定したJoy-Conだけ決定可能
+    public bool GetConfirmButtonDown(int deviceId)
+    {
+        Joycon joycon = GetJoycon(deviceId);
+        if (joycon == null) return false;
+
+        if (joycon.isLeft)
+        {
+            return joycon.GetButtonDown(Joycon.Button.DPAD_DOWN);
+        }
+        else
+        {
+            return joycon.GetButtonDown(Joycon.Button.DPAD_UP);
+        }
+    }
+
+    // ========================================
     // キャンセルボタン
+    // ========================================
+
+    // どのJoy-Conでもキャンセル可能
     public bool GetCancelButtonDown()
     {
-        // Joy-Con管理クラスが存在しなければ何もしない
-        if (JoyconManager.Instance == null) return false;
-        if (JoyconManager.Instance.j == null) return false;
+        if (!HasJoycons()) return false;
 
-        // 接続中のJoy-Conを順番に確認
-        foreach (Joycon joycon in JoyconManager.Instance.j)
+        for (int i = 0; i < JoyconManager.Instance.j.Count; i++)
         {
-            if (joycon == null) continue;
-
-            // 横持ち時の右側に当たるボタンを取得
-            if (joycon.isLeft)
-            {
-                if (joycon.GetButtonDown(Joycon.Button.DPAD_LEFT))
-                    return true;
-            }
-            else
-            {
-                if (joycon.GetButtonDown(Joycon.Button.DPAD_RIGHT))
-                    return true;
-            }
+            if (GetCancelButtonDown(i))
+                return true;
         }
 
         return false;
     }
 
+    // 指定したJoy-Conだけキャンセル可能
+    public bool GetCancelButtonDown(int deviceId)
+    {
+        Joycon joycon = GetJoycon(deviceId);
+        if (joycon == null) return false;
+
+        if (joycon.isLeft)
+        {
+            return joycon.GetButtonDown(Joycon.Button.DPAD_LEFT);
+        }
+        else
+        {
+            return joycon.GetButtonDown(Joycon.Button.DPAD_RIGHT);
+        }
+    }
+
+    // ========================================
     // スティック入力
+    // ========================================
+
+    // どのJoy-Conでも操作可能
     public UIInputDirection GetStick()
     {
-        if (JoyconManager.Instance == null)
+        if (!HasJoycons()) return UIInputDirection.None;
+
+        for (int i = 0; i < JoyconManager.Instance.j.Count; i++)
         {
-            Debug.LogWarning("JoyconManager.Instance が null");
-            return UIInputDirection.None;
-        }
+            UIInputDirection direction = GetStick(i);
 
-        if (JoyconManager.Instance.j == null)
-        {
-            Debug.LogWarning("Joy-Conリストが null");
-            return UIInputDirection.None;
-        }
-
-        // 接続中のJoy-Conを順番に確認
-        foreach (Joycon joycon in JoyconManager.Instance.j)
-        {
-            if (joycon == null) continue;
-
-            float[] stick = joycon.GetStick();
-
-            float x = stick[0];
-            float y = stick[1];
-
-            if (joycon.isLeft)
-            {
-                if (x > 0.5f)
-                {
-                    Debug.Log("上に入力");
-                    return UIInputDirection.Up;
-                }
-                else if (x < -0.5f)
-                {
-                    Debug.Log("下に入力");
-                    return UIInputDirection.Down;
-                }
-
-                if (y > 0.5f)
-                {
-                    Debug.Log("左に入力");
-                    return UIInputDirection.Left;
-                }
-                else if (y < -0.5f)
-                {
-                    Debug.Log("右に入力");
-                    return UIInputDirection.Right;
-                }
-            }
-            else
-            {
-                if (x > 0.5f)
-                {
-                    Debug.Log("下に入力");
-                    return UIInputDirection.Down;
-                }
-                else if (x < -0.5f)
-                {
-                    Debug.Log("上に入力");
-                    return UIInputDirection.Up;
-                }
-
-                if (y > 0.5f)
-                {
-                    Debug.Log("右に入力");
-                    return UIInputDirection.Right;
-                }
-                else if (y < -0.5f)
-                {
-                    Debug.Log("左に入力");
-                    return UIInputDirection.Left;
-                }
-            }
+            if (direction != UIInputDirection.None)
+                return direction;
         }
 
         return UIInputDirection.None;
     }
-    /// <summary>    
-    /// 縦の選択インデックス操作
-    /// </summary>
-    public int UIIndexVertical()
-    {
-        int index = 0;
 
-        switch (GetStick())
+    // 指定したJoy-Conだけ操作可能
+    public UIInputDirection GetStick(int deviceId)
+    {
+        Joycon joycon = GetJoycon(deviceId);
+
+        if (joycon == null)
+            return UIInputDirection.None;
+
+        float[] stick = joycon.GetStick();
+
+        if (stick == null || stick.Length < 2)
+            return UIInputDirection.None;
+
+        float x = stick[0];
+        float y = stick[1];
+
+        if (joycon.isLeft)
         {
-            case UIInputDirection.None:
-                index = -0;
-                break;
-            case UIInputDirection.Up:
-                index = -1;
-                break;
-            case UIInputDirection.Down:
-                index = 1;
-                break;
+            if (x > 0.5f)
+                return UIInputDirection.Up;
+
+            if (x < -0.5f)
+                return UIInputDirection.Down;
+
+            if (y > 0.5f)
+                return UIInputDirection.Left;
+
+            if (y < -0.5f)
+                return UIInputDirection.Right;
         }
-        return index;
+        else
+        {
+            if (x > 0.5f)
+                return UIInputDirection.Down;
+
+            if (x < -0.5f)
+                return UIInputDirection.Up;
+
+            if (y > 0.5f)
+                return UIInputDirection.Right;
+
+            if (y < -0.5f)
+                return UIInputDirection.Left;
+        }
+
+        return UIInputDirection.None;
     }
 
-    /// <summary>    
-    /// 横の選択インデックス操作
-    /// </summary>
+    // ========================================
+    // 縦方向の選択インデックス
+    // ========================================
+
+    // 誰でも操作可能
+    public int UIIndexVertical()
+    {
+        return DirectionToVertical(GetStick());
+    }
+
+    // 指定したJoy-Conだけ操作可能
+    public int UIIndexVertical(int deviceId)
+    {
+        return DirectionToVertical(GetStick(deviceId));
+    }
+
+    private int DirectionToVertical(UIInputDirection direction)
+    {
+        switch (direction)
+        {
+            case UIInputDirection.Up:
+                return -1;
+
+            case UIInputDirection.Down:
+                return 1;
+
+            default:
+                return 0;
+        }
+    }
+
+    // ========================================
+    // 横方向の選択インデックス
+    // ========================================
+
+    // 誰でも操作可能
     public int UIIndexHorizontal()
     {
-        int index = 0;
+        return DirectionToHorizontal(GetStick());
+    }
 
-        switch (GetStick())
+    // 指定したJoy-Conだけ操作可能
+    public int UIIndexHorizontal(int deviceId)
+    {
+        return DirectionToHorizontal(GetStick(deviceId));
+    }
+
+    private int DirectionToHorizontal(UIInputDirection direction)
+    {
+        switch (direction)
         {
-            case UIInputDirection.None:
-                index = 0;
-                break;
-            case UIInputDirection.Right:
-                index = 1;
-                break;
             case UIInputDirection.Left:
-                index = -1;
-                break;
+                return -1;
+
+            case UIInputDirection.Right:
+                return 1;
+
+            default:
+                return 0;
         }
-        return index;
+    }
+
+    // ========================================
+    // 共通処理
+    // ========================================
+
+    // Joy-Con管理クラスが存在するか
+    private bool HasJoycons()
+    {
+        return JoyconManager.Instance != null &&
+               JoyconManager.Instance.j != null;
+    }
+
+    // 指定した番号のJoy-Conを取得
+    private Joycon GetJoycon(int deviceId)
+    {
+        if (!HasJoycons())
+            return null;
+
+        var joycons = JoyconManager.Instance.j;
+
+        if (deviceId < 0 || deviceId >= joycons.Count)
+            return null;
+
+        return joycons[deviceId];
     }
 }
