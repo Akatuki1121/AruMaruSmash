@@ -56,12 +56,36 @@ public class CharacterChoiceUIManager : BaseUIManager
                 }
             }
 
-            // キャンセルで準備OK解除
+            // キャンセルで準備OK解除 誰も準備OKしていない状態でキャンセルを押すと、タイトル画面に戻る
+            // キャンセルボタン
             if (GetCancelButtonDown(deviceId))
             {
-                flow.CancelCharacter(slot);
+                if (player.hasConfirmedReady)
+                {
+                    // 自分が準備OKなら解除
+                    flow.CancelCharacter(slot);
+                    Debug.Log($"{slot + 1}P 準備OK解除");
+                }
+                else
+                {
+                    // 誰も準備OKしていなければタイトルへ戻る
+                    bool anyoneReady = false;
 
-                Debug.Log($"{slot + 1}P 準備OK解除");
+                    foreach (PlayerSlot p in flow.Players.JoinedPlayers)
+                    {
+                        if (p.hasConfirmedReady)
+                        {
+                            anyoneReady = true;
+                            break;
+                        }
+                    }
+
+                    if (!anyoneReady)
+                    {
+                        OnBackTitle();
+                        return;
+                    }
+                }
             }
         }
 
@@ -100,5 +124,14 @@ public class CharacterChoiceUIManager : BaseUIManager
 
         Debug.Log("はじめましょう");
         button.OnStartGameClicked();
+    }
+
+    // タイトルに戻る処理
+    public void OnBackTitle()
+    {
+        if (flow == null || button == null)
+            return;
+        Debug.Log("タイトルに戻ります");
+        button.OnBackTitleClicked();
     }
 }
