@@ -15,23 +15,25 @@ public class TitleUIManager : BaseUIManager
     [SerializeField] private Sprite normalOptionSprite;
     [SerializeField] private Sprite pressedOptionSprite;
 
-    [Header("UIÇÃêÿÇËë÷Ç¶")]
-    public GameObject UIManager;
-    public GameObject OptionUI;
-
     [Header("É{É^Éìââèo")]
-    [SerializeField] private float selectedScale = 1.1f;
+    [SerializeField] private float selectedScale = 1.2f;
     [SerializeField] private float pressedScale = 0.95f;
     [SerializeField] private float pressDuration = 0.15f;
     [SerializeField] private float scaleSpeed = 12f;
 
+    [Header("UIÇÃêÿÇËë÷Ç¶")]
+    public GameObject UIManager;
+    public GameObject OptionUI;
+
     private ButtonManager button;
 
     private const int MAX_V_SELECT = 1;
-    private const int MAX_H_SELECT = 1;
 
     private int selectV = 0;
-    private int selectH = 0;
+
+    private Vector3 startOriginalScale;
+    private Vector3 optionOriginalScale;
+
 
     private UIInputDirection previousDirection = UIInputDirection.None;
     private bool isPressing = false;
@@ -39,7 +41,12 @@ public class TitleUIManager : BaseUIManager
     private void Start()
     {
         button = FindAnyObjectByType<ButtonManager>();
-        UpdateButtonSprites();
+
+        startOriginalScale = startButtonImage.rectTransform.localScale;
+        optionOriginalScale = optionButtonImage.rectTransform.localScale;
+
+        UpdateButtonSprites(startButtonImage, normalStartSprite);
+        UpdateButtonSprites(optionButtonImage, normalOptionSprite);
     }
 
     private void Update()
@@ -59,16 +66,9 @@ public class TitleUIManager : BaseUIManager
                 case UIInputDirection.Down:
                     selectV++;
                     break;
-                case UIInputDirection.Left:
-                    selectH--;
-                    break;
-                case UIInputDirection.Right:
-                    selectH++;
-                    break;
             }
 
             selectV = Mathf.Clamp(selectV, 0, MAX_V_SELECT);
-            selectH = Mathf.Clamp(selectH, 0, MAX_H_SELECT);
         }
 
         previousDirection = direction;
@@ -83,30 +83,24 @@ public class TitleUIManager : BaseUIManager
 
     private void UpdateButtonScale()
     {
-        SetButtonScale(startButtonImage, selectV == 0 && selectH == 0);
-        SetButtonScale(optionButtonImage, selectV == 1 && selectH == 0);
+        SetButtonScale(startButtonImage, startOriginalScale,
+        selectV == 0);
+
+        SetButtonScale(optionButtonImage, optionOriginalScale,
+            selectV == 1);
     }
 
-    private void SetButtonScale(Image image, bool selected)
+    private void SetButtonScale(Image image, Vector3 originalScale, bool selected)
     {
         if (image == null) return;
 
-        float target = selected ? selectedScale : 1f;
+        float multiplier = selected ? selectedScale : 1f;
 
         image.rectTransform.localScale = Vector3.Lerp(
             image.rectTransform.localScale,
-            Vector3.one * target,
+            originalScale * multiplier,
             Time.unscaledDeltaTime * scaleSpeed
         );
-    }
-
-    private void UpdateButtonSprites()
-    {
-        if (startButtonImage != null)
-            startButtonImage.sprite = normalStartSprite;
-
-        if (optionButtonImage != null)
-            optionButtonImage.sprite = normalOptionSprite;
     }
 
     private IEnumerator PressButtonRoutine()
@@ -116,12 +110,12 @@ public class TitleUIManager : BaseUIManager
         Image selectedImage = null;
         Sprite pressedSprite = null;
 
-        if (selectV == 0 && selectH == 0)
+        if (selectV == 0)
         {
             selectedImage = startButtonImage;
             pressedSprite = pressedStartSprite;
         }
-        else if (selectV == 1 && selectH == 0)
+        else if (selectV == 1)
         {
             selectedImage = optionButtonImage;
             pressedSprite = pressedOptionSprite;
@@ -143,20 +137,17 @@ public class TitleUIManager : BaseUIManager
 
         yield return new WaitForSecondsRealtime(pressDuration);
 
-        if (selectV == 0 && selectH == 0)
+        if (selectV == 0)
         {
             button.OnStartClicked();
         }
-        else if (selectV == 1 && selectH == 0)
+        else if (selectV == 1)
         {
             button.OnOptionClicked();
         }
-        else if (selectV == 1 && selectH == 1)
-        {
-            button.OnQuitClicked();
-        }
 
-        UpdateButtonSprites();
+        UpdateButtonSprites(startButtonImage, normalStartSprite);
+        UpdateButtonSprites(optionButtonImage, normalOptionSprite);
         isPressing = false;
     }
 }

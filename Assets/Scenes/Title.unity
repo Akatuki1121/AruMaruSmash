@@ -689,7 +689,7 @@ RectTransform:
   m_GameObject: {fileID: 477989160}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.1, y: 1.1, z: 1.1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 514953982}
@@ -841,9 +841,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fec2cce0f6e49942b18ff6134478c0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OptionUIManager
-  UIManager: {fileID: 898472979}
-  OptionUI: {fileID: 828777398}
-  HowToPlayUI: {fileID: 1192678574}
+  howToPlayButtonImage: {fileID: 0}
+  normalHowToPlaySprite: {fileID: 0}
+  pressedHowToPlaySprite: {fileID: 0}
+  backButtonImage: {fileID: 1938336938}
+  normalBackSprite: {fileID: 21300000, guid: 5e1a931c0f30ce34b9a506d04f5793e8, type: 3}
+  pressedBackSprite: {fileID: 21300000, guid: 6c9c80433a2f22040af543cd30c1a249, type: 3}
+  selectedScale: 1.2
+  pressedScale: 0.95
+  pressDuration: 0.15
+  scaleSpeed: 12
 --- !u!1 &514953978
 GameObject:
   m_ObjectHideFlags: 0
@@ -1584,12 +1591,12 @@ MonoBehaviour:
   optionButtonImage: {fileID: 477989163}
   normalOptionSprite: {fileID: 21300000, guid: 9adb245145eb31747ac0a829960a077b, type: 3}
   pressedOptionSprite: {fileID: 21300000, guid: 839e1f2c4b731534d83d6030e30deacf, type: 3}
-  UIManager: {fileID: 898472979}
-  OptionUI: {fileID: 828777398}
   selectedScale: 1.1
   pressedScale: 0.95
   pressDuration: 0.15
   scaleSpeed: 12
+  UIManager: {fileID: 898472979}
+  OptionUI: {fileID: 828777398}
 --- !u!1 &1006204135
 GameObject:
   m_ObjectHideFlags: 0
@@ -1947,7 +1954,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1192678575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2488,8 +2495,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edd28520e1fefb24b8fb60770c50bce5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HowToPlayUIManager
-  HowToPlayUI: {fileID: 1192678574}
-  OptionUI: {fileID: 828777398}
+  backButtonImage: {fileID: 1944884699}
+  normalBackSprite: {fileID: 21300000, guid: 5e1a931c0f30ce34b9a506d04f5793e8, type: 3}
+  pressedBackSprite: {fileID: 21300000, guid: 6c9c80433a2f22040af543cd30c1a249, type: 3}
+  selectedScale: 1.2
+  pressedScale: 0.95
+  pressDuration: 0.15
+  scaleSpeed: 12
 --- !u!1 &1815861391
 GameObject:
   m_ObjectHideFlags: 0
@@ -3020,7 +3032,7 @@ GameObject:
   - component: {fileID: 1944884699}
   - component: {fileID: 1944884698}
   m_Layer: 5
-  m_Name: BacOption Button
+  m_Name: BackOption Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

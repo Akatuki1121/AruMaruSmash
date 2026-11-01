@@ -1,5 +1,6 @@
 
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum UIInputDirection
 {
@@ -233,5 +234,16 @@ public class BaseUIManager : MonoBehaviour
             return null;
 
         return joycons[deviceId];
+    }
+
+    // ========================================
+    // ボタン演出
+    // =====================================
+
+    // ボタンのスプライトを更新する
+    public void UpdateButtonSprites(Image buttonImage, Sprite normalSprite)
+    {
+        if (buttonImage != null)
+            buttonImage.sprite = normalSprite;
     }
 }
