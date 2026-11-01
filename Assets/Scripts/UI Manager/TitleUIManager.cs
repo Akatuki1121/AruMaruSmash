@@ -1,44 +1,53 @@
+
+using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class TitleUIManager : BaseUIManager
 {
-    private ButtonManager button;
+    [Header("スタートボタン")]
+    [SerializeField] private Image startButtonImage;
+    [SerializeField] private Sprite normalStartSprite;
+    [SerializeField] private Sprite pressedStartSprite;
 
+    [Header("オプションボタン")]
+    [SerializeField] private Image optionButtonImage;
+    [SerializeField] private Sprite normalOptionSprite;
+    [SerializeField] private Sprite pressedOptionSprite;
+
+    [Header("UIの切り替え")]
     public GameObject UIManager;
     public GameObject OptionUI;
 
+    [Header("ボタン演出")]
+    [SerializeField] private float selectedScale = 1.1f;
+    [SerializeField] private float pressedScale = 0.95f;
+    [SerializeField] private float pressDuration = 0.15f;
+    [SerializeField] private float scaleSpeed = 12f;
+
+    private ButtonManager button;
+
     private const int MAX_V_SELECT = 1;
     private const int MAX_H_SELECT = 1;
-    private const int MIN_V_SELECT = 0;
-    private const int MIN_H_SELECT = 0;
 
     private int selectV = 0;
     private int selectH = 0;
 
     private UIInputDirection previousDirection = UIInputDirection.None;
+    private bool isPressing = false;
 
     private void Start()
     {
         button = FindAnyObjectByType<ButtonManager>();
+        UpdateButtonSprites();
     }
 
     private void Update()
     {
-        if (Keyboard.current != null &&
-    Keyboard.current.f1Key.wasPressedThisFrame)
-        {
-            Debug.Log(
-                $"TitleCanvas: {transform.parent.gameObject.activeInHierarchy}, " +
-                $"TitleUIManager: {gameObject.activeInHierarchy}"
-            );
-        }
-
-        if (button == null) return;
+        if (button == null || isPressing) return;
 
         UIInputDirection direction = GetStick();
 
-        // スティックを倒した瞬間だけ選択位置を変更
         if (direction != UIInputDirection.None &&
             previousDirection == UIInputDirection.None)
         {
@@ -47,27 +56,92 @@ public class TitleUIManager : BaseUIManager
                 case UIInputDirection.Up:
                     selectV--;
                     break;
-
                 case UIInputDirection.Down:
                     selectV++;
                     break;
-
                 case UIInputDirection.Left:
                     selectH--;
                     break;
-
                 case UIInputDirection.Right:
                     selectH++;
                     break;
             }
 
-            selectV = Mathf.Clamp(selectV, MIN_V_SELECT, MAX_V_SELECT);
-            selectH = Mathf.Clamp(selectH, MIN_H_SELECT, MAX_H_SELECT);
+            selectV = Mathf.Clamp(selectV, 0, MAX_V_SELECT);
+            selectH = Mathf.Clamp(selectH, 0, MAX_H_SELECT);
         }
 
         previousDirection = direction;
 
-        if (!GetConfirmButtonDown()) return;
+        UpdateButtonScale();
+
+        if (GetConfirmButtonDown())
+        {
+            StartCoroutine(PressButtonRoutine());
+        }
+    }
+
+    private void UpdateButtonScale()
+    {
+        SetButtonScale(startButtonImage, selectV == 0 && selectH == 0);
+        SetButtonScale(optionButtonImage, selectV == 1 && selectH == 0);
+    }
+
+    private void SetButtonScale(Image image, bool selected)
+    {
+        if (image == null) return;
+
+        float target = selected ? selectedScale : 1f;
+
+        image.rectTransform.localScale = Vector3.Lerp(
+            image.rectTransform.localScale,
+            Vector3.one * target,
+            Time.unscaledDeltaTime * scaleSpeed
+        );
+    }
+
+    private void UpdateButtonSprites()
+    {
+        if (startButtonImage != null)
+            startButtonImage.sprite = normalStartSprite;
+
+        if (optionButtonImage != null)
+            optionButtonImage.sprite = normalOptionSprite;
+    }
+
+    private IEnumerator PressButtonRoutine()
+    {
+        isPressing = true;
+
+        Image selectedImage = null;
+        Sprite pressedSprite = null;
+
+        if (selectV == 0 && selectH == 0)
+        {
+            selectedImage = startButtonImage;
+            pressedSprite = pressedStartSprite;
+        }
+        else if (selectV == 1 && selectH == 0)
+        {
+            selectedImage = optionButtonImage;
+            pressedSprite = pressedOptionSprite;
+        }
+        else
+        {
+            isPressing = false;
+            yield break;
+        }
+
+        if (selectedImage != null)
+        {
+            if (pressedSprite != null)
+                selectedImage.sprite = pressedSprite;
+
+            selectedImage.rectTransform.localScale =
+                Vector3.one * pressedScale;
+        }
+
+        yield return new WaitForSecondsRealtime(pressDuration);
 
         if (selectV == 0 && selectH == 0)
         {
@@ -75,8 +149,6 @@ public class TitleUIManager : BaseUIManager
         }
         else if (selectV == 1 && selectH == 0)
         {
-            UIManager.SetActive(false);
-            OptionUI.SetActive(true);
             button.OnOptionClicked();
         }
         else if (selectV == 1 && selectH == 1)
@@ -84,7 +156,7 @@ public class TitleUIManager : BaseUIManager
             button.OnQuitClicked();
         }
 
-        Debug.Log($"Title縦の選択は：{selectV}");
-        Debug.Log($"Title横の選択は：{selectH}");
+        UpdateButtonSprites();
+        isPressing = false;
     }
 }

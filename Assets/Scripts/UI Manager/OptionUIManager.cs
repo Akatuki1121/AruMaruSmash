@@ -59,9 +59,6 @@ public class OptionUIManager : BaseUIManager
 
         if (selectV == 0)
         {
-            HowToPlayUI.SetActive(true);
-            OptionUI.SetActive(false);
-
             button.OnHowToPlayClicked();
         }
         else if (selectV == 1)
@@ -74,9 +71,6 @@ public class OptionUIManager : BaseUIManager
         }
         else if(selectV == 3)
         {
-            UIManager.SetActive(true);
-            OptionUI.SetActive(false);
-
             button.OnBackTitleClicked();
         }
 

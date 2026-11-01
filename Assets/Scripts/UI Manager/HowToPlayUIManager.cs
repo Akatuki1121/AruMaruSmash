@@ -20,10 +20,7 @@ public class HowToPlayUIManager : BaseUIManager
 
         if (GetConfirmButtonDown())
         {
-            HowToPlayUI.SetActive(false);
-            OptionUI.SetActive(true);
-
-            button.OnOptionClicked();
+            button.OnBackClicked();
         }
     }
 }
