@@ -83,43 +83,88 @@ public class GameFlowManager : MonoBehaviour
         };
     }
 
+    private void RegisterConnectedJoycons()
+    {
+        if (JoyconManager.Instance == null ||
+            JoyconManager.Instance.j == null)
+        {
+            Debug.LogWarning("JoyconManagerが見つかりません");
+            return;
+        }
+
+        int count = Mathf.Min(
+            JoyconManager.Instance.j.Count,
+            PlayerRegistry.MAX_PLAYERS
+        );
+
+        Players.ResetAll();
+
+        for (int i = 0; i < count; i++)
+        {
+            if (JoyconManager.Instance.j[i] == null)
+                continue;
+
+            Players.Join(i, i);
+        }
+
+        Players.RequiredPlayers = Players.ActiveCount;
+
+        Debug.Log($"プレイヤー登録完了: {Players.ActiveCount}人");
+    }
+
+
     private void BuildTable()
     {
-        // タイトル周り（T_1 / O_1）
-        Add(GameState.Title, GameEvent.Start, GameState.ControllerAssignment, true, null, Players.ResetAssignOk);
+        // ===== タイトル周り =====
+
+        // タイトル → キャラ選択（準備OK画面）
+        Add(GameState.Title, GameEvent.Start, GameState.CharacterSelect, true,null, RegisterConnectedJoycons);
+
         Add(GameState.Title, GameEvent.OpenOption, GameState.Option, true);
+
         Add(GameState.Title, GameEvent.Quit, GameState.Quit, true);
+
         Add(GameState.Option, GameEvent.OpenGuide, GameState.OperationGuide, true);
+
         Add(GameState.Option, GameEvent.OpenSettings, GameState.Settings, true);
+
         Add(GameState.OperationGuide, GameEvent.Back, GameState.Option, true);
+
         Add(GameState.Settings, GameEvent.Back, GameState.Option, true);
+
         Add(GameState.Option, GameEvent.ToTitle, GameState.Title, true);
+
         Add(GameState.Option, GameEvent.Quit, GameState.Quit, true);
 
-        // ロビー（S_1 + 画面遷移図）。キャラ選択 → 待機 → スタート確認 → ゲーム
-        Add(GameState.ControllerAssignment, GameEvent.AssignmentAllOk, GameState.CharacterSelect, false,
-            () => Players.AllAssigned);
-        Add(GameState.ControllerAssignment, GameEvent.ToTitle, GameState.Title, true, null, ExitToTitle);
-        Add(GameState.CharacterSelect, GameEvent.SelectionAllOk, GameState.Waiting, false,
-            () => Players.AllSelected, EnterWaitingFresh);
-        Add(GameState.CharacterSelect, GameEvent.BackToAssignment, GameState.ControllerAssignment, true,
-            null, BackToAssignment);
-        Add(GameState.Waiting, GameEvent.WaitingAllConfirmed, GameState.GameStartConfirm, false,
-            () => Players.AllConfirmed);
-        Add(GameState.Waiting, GameEvent.CancelToCharacterSelect, GameState.CharacterSelect, true,
-            null, Players.ResetCharacterConfirm);
-        Add(GameState.GameStartConfirm, GameEvent.StartGame, GameState.Playing, true);
-        Add(GameState.GameStartConfirm, GameEvent.Back, GameState.Waiting, true, null, EnterWaitingFresh);
 
-        // ゲーム中
+        // ===== キャラ選択（現在は準備OK画面） =====
+
+        // 全員が準備OKになったあと、
+        // 誰かがスタートボタンを押したときだけゲーム開始
+        Add(GameState.CharacterSelect, GameEvent.StartGame, GameState.Playing, false, () => Players.ActiveCount > 0 && Players.AllConfirmed);
+
+        // タイトルに戻る
+        Add(GameState.CharacterSelect, GameEvent.ToTitle, GameState.Title, false, null, ExitToTitle);
+
+
+        // ===== ゲーム中 =====
+
         Add(GameState.Playing, GameEvent.Pause, GameState.Pause, true, null, PauseTime);
+
         Add(GameState.Playing, GameEvent.MatchEnd, GameState.Result, false);
+
         Add(GameState.Pause, GameEvent.Resume, GameState.Playing, true, null, ResumeTime);
+
         Add(GameState.Pause, GameEvent.ToTitle, GameState.Title, true, null, ExitToTitle);
-        Add(GameState.Pause, GameEvent.ToWaiting, GameState.Waiting, true, null, ExitToWaitingRetry);
-        Add(GameState.Result, GameEvent.Retry, GameState.Waiting, true, null, ExitToWaitingRetry);
+
+        // リトライ時も準備OK画面に戻る
+        Add(GameState.Pause, GameEvent.ToWaiting, GameState.CharacterSelect, true, null, EnterWaitingFresh);
+
+        Add(GameState.Result, GameEvent.Retry, GameState.CharacterSelect, true, null, EnterWaitingFresh);
+
         Add(GameState.Result, GameEvent.ToTitle, GameState.Title, true, null, ExitToTitle);
     }
+
 
     // ===== 唯一の入口 =====
 
@@ -227,6 +272,8 @@ public class GameFlowManager : MonoBehaviour
 
         if (IsLobbyOrLaterState(State) && Players.ActiveCount == 0)
         {
+            Debug.LogWarning($"プレイヤー0人のためタイトルに戻る: State={State}");
+
             Request(GameEvent.AllPlayersLeft);
             return;
         }
@@ -236,9 +283,9 @@ public class GameFlowManager : MonoBehaviour
             case GameState.ControllerAssignment:
                 Request(GameEvent.AssignmentAllOk);
                 break;
-            case GameState.CharacterSelect:
-                Request(GameEvent.SelectionAllOk);
-                break;
+            // case GameState.CharacterSelect:
+                //Request(GameEvent.SelectionAllOk);
+                //break;
             case GameState.Waiting:
                 Request(GameEvent.WaitingAllConfirmed);
                 break;
@@ -275,11 +322,18 @@ public class GameFlowManager : MonoBehaviour
 
     public void ConfirmReady(int slot)
     {
-        if (State != GameState.Waiting || WaitingMode != WaitingScreenMode.ReadyCheck)
-        {
+        if (State != GameState.CharacterSelect)
             return;
-        }
-        Players.slots[slot].hasConfirmedReady = true;
+
+        if (slot < 0 || slot >= Players.slots.Length)
+            return;
+
+        PlayerSlot player = Players.slots[slot];
+
+        if (!player.IsActive)
+            return;
+
+        player.hasConfirmedReady = true;
         Players.NotifyChanged();
     }
 

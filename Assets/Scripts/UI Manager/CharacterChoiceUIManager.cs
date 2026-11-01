@@ -14,6 +14,10 @@ public class CharacterChoiceUIManager : BaseUIManager
     private int selectV = 0;
     private int selectH = 0;
 
+    // プレイヤーの準備用
+    private int readyPlayerCount = 1;  // 準備OKを押した人数
+    private int connectedJoyconCount = 1; // 接続中のJoy-Con数
+
     private UIInputDirection previousDirection = UIInputDirection.None;
 
     private void Start()
@@ -58,17 +62,21 @@ public class CharacterChoiceUIManager : BaseUIManager
 
         if (!GetConfirmButtonDown()) return;
 
-        if (selectV == 0 && selectH == 0)
+        GameFlowManager flow = GameFlowManager.Instance;
+
+        if (flow == null) return;
+
+        // テスト用：接続中の全プレイヤーを準備OKにする
+        foreach (PlayerSlot player in flow.Players.ActivePlayers)
         {
-            button.OnStartClicked();
+            flow.ConfirmReady(player.index);
         }
-        else if (selectV == 1 && selectH == 0)
+
+        // 全員準備OKならゲーム開始
+        if (flow.Players.AllConfirmed)
         {
-            button.OnOptionClicked();
-        }
-        else if (selectV == 1 && selectH == 1)
-        {
-            button.OnQuitClicked();
+            Debug.Log("全員準備OK！ゲームスタート！");
+            button.OnStartGameClicked();
         }
 
         Debug.Log($"縦の選択は：{selectV}");

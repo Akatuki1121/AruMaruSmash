@@ -29,6 +29,10 @@ public class JoyconManager : MonoBehaviour
         }
 
         instance = this;
+
+        // シーンを切り替えてもJoyconManagerを維持
+        DontDestroyOnLoad(gameObject);
+
         j = new List<Joycon>();
         HIDapi.hid_init();
     }

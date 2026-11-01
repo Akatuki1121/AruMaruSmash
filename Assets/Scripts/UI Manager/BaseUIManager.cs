@@ -71,6 +71,19 @@ public class BaseUIManager : MonoBehaviour
     // スティック入力
     public UIInputDirection GetStick()
     {
+        if (JoyconManager.Instance == null)
+        {
+            Debug.LogWarning("JoyconManager.Instance が null");
+            return UIInputDirection.None;
+        }
+
+        if (JoyconManager.Instance.j == null)
+        {
+            Debug.LogWarning("Joy-Conリストが null");
+            return UIInputDirection.None;
+        }
+
+        // 接続中のJoy-Conを順番に確認
         foreach (Joycon joycon in JoyconManager.Instance.j)
         {
             if (joycon == null) continue;
