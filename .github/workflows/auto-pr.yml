@@ -13,6 +13,11 @@ jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Create PR if none exists
         env:
           GH_TOKEN: ${{ github.token }}
@@ -27,6 +32,6 @@ jobs:
           fi
           url=$(gh pr create --base main --head "$BRANCH" \
             --title "$BRANCH" \
-            --body "@${ACTOR} がプッシュしたブランチから自動作成されたPRです。")
+            --fill-verbose)
           echo "$url"
           gh pr edit "$url" --add-assignee "$ACTOR" || echo "assignee の設定に失敗しました"
