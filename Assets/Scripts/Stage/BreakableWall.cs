@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -12,26 +13,71 @@ public class BreakableWall : MonoBehaviour
     [Tooltip("進行するほど近づく色(壁の色が段階的に変わる)")]
     public Color crackedColor = new Color(0.35f, 0.3f, 0.3f, 1f);
 
-    private Renderer wallRenderer;
-    private MaterialPropertyBlock block;
-    private int colorId = -1;
-    private Color baseColor;
+    // URP/Lit、Standard、および一般的なTint系シェーダーの色プロパティ。
+    // マテリアルごとに HasProperty で確認し、存在するものだけを使用する。
+    private static readonly int[] ColorPropertyIds =
+    {
+        Shader.PropertyToID("_BaseColor"),
+        Shader.PropertyToID("_Color"),
+        Shader.PropertyToID("_TintColor"),
+        Shader.PropertyToID("_BaseColorFactor")
+    };
 
+    private sealed class WallColorTarget
+    {
+        public Renderer Renderer;
+        public int MaterialIndex;
+        public int ColorPropertyId;
+        public Color OriginalColor;
+    }
+
+    private readonly List<WallColorTarget> colorTargets = new List<WallColorTarget>();
+    private MaterialPropertyBlock block;
     private float currentProgress;
 
     private void Awake()
     {
-        wallRenderer = GetComponentInChildren<Renderer>();
-        if (wallRenderer == null) return;
-
-        Material material = wallRenderer.sharedMaterial;
-        if (material != null)
-        {
-            if (material.HasProperty("_BaseColor")) colorId = Shader.PropertyToID("_BaseColor");
-            else if (material.HasProperty("_Color")) colorId = Shader.PropertyToID("_Color");
-            if (colorId != -1) baseColor = material.GetColor(colorId);
-        }
         block = new MaterialPropertyBlock();
+
+        // 壁の子階層にある全 Renderer と、各 Renderer の全マテリアルスロットを対象にする。
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer targetRenderer in renderers)
+        {
+            if (targetRenderer == null) continue;
+
+            Material[] materials = targetRenderer.sharedMaterials;
+            for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+            {
+                Material material = materials[materialIndex];
+                if (material == null) continue;
+
+                int colorPropertyId = FindColorProperty(material);
+                if (colorPropertyId == -1) continue;
+
+                colorTargets.Add(new WallColorTarget
+                {
+                    Renderer = targetRenderer,
+                    MaterialIndex = materialIndex,
+                    ColorPropertyId = colorPropertyId,
+                    OriginalColor = material.GetColor(colorPropertyId)
+                });
+            }
+        }
+    }
+
+    private static int FindColorProperty(Material material)
+    {
+        for (int i = 0; i < ColorPropertyIds.Length; i++)
+        {
+            int propertyId = ColorPropertyIds[i];
+            if (material.HasProperty(propertyId))
+            {
+                return propertyId;
+            }
+        }
+
+        return -1;
     }
 
     // 各 Breaker から呼ばれる。複数の Breaker がある場合は最も進んでいる値を採用する
@@ -50,9 +96,18 @@ public class BreakableWall : MonoBehaviour
 
     private void ApplyTint(float t)
     {
-        if (wallRenderer == null || colorId == -1) return;
-        wallRenderer.GetPropertyBlock(block);
-        block.SetColor(colorId, Color.Lerp(baseColor, crackedColor, t));
-        wallRenderer.SetPropertyBlock(block);
+        foreach (WallColorTarget target in colorTargets)
+        {
+            if (target.Renderer == null) continue;
+
+            // 既存の PropertyBlock を取得してから色だけを上書きし、
+            // 他のスクリプトが設定したプロパティを維持する。
+            target.Renderer.GetPropertyBlock(block, target.MaterialIndex);
+            block.SetColor(
+                target.ColorPropertyId,
+                Color.Lerp(target.OriginalColor, crackedColor, t)
+            );
+            target.Renderer.SetPropertyBlock(block, target.MaterialIndex);
+        }
     }
 }
