@@ -13,8 +13,8 @@ public class PodiumDisplay : MonoBehaviour
     [Header("キャラクター(要素番号 = プレイヤー番号。0 = 1P)")]
     [SerializeField] private GameObject[] characterPrefabs;
 
-    [Header("表彰台マテリアル")]
-    [SerializeField] private Material podiumMaterial;
+    [Header("表彰台プレハブ")]
+    [SerializeField] private GameObject podiumPrefab;
 
     [Header("配置")]
     [Tooltip("台と台の間隔(ワールド単位)")]
@@ -125,11 +125,16 @@ public class PodiumDisplay : MonoBehaviour
         }
     }
 
-    private void CreatePodiumBlock(float x, float height, int rank)
+     private void CreatePodiumBlock(float x, float height, int rank)
     {
-        GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        if (podiumPrefab == null)
+        {
+            Debug.LogError("PodiumDisplay に表彰台プレハブが設定されていません。", this);
+            return;
+        }
+
+        GameObject block = Instantiate(podiumPrefab, transform, false);
         block.name = $"Podium_Rank{rank}";
-        block.transform.SetParent(transform, false);
         block.transform.localScale = new Vector3(podiumSpacing * 0.85f, height, PODIUM_DEPTH);
         block.transform.localPosition = new Vector3(x, height * 0.5f, 0f);
 
@@ -139,37 +144,30 @@ public class PodiumDisplay : MonoBehaviour
         Renderer r = block.GetComponent<Renderer>();
         if (r != null)
         {
-            if (podiumMaterial != null)
-            {
-                // URP/Lit の専用マテリアルを共有し、順位色だけを Renderer ごとに上書きする
-                r.sharedMaterial = podiumMaterial;
+            Material material = r.sharedMaterial;
+            string colorProperty = material != null && material.HasProperty("_BaseColor")
+                ? "_BaseColor"
+                : material != null && material.HasProperty("_Color") ? "_Color" : null;
 
+            if (colorProperty != null)
+            {
                 MaterialPropertyBlock properties = new MaterialPropertyBlock();
                 r.GetPropertyBlock(properties);
-
-                string colorProperty = podiumMaterial.HasProperty("_BaseColor")
-                    ? "_BaseColor"
-                    : podiumMaterial.HasProperty("_Color") ? "_Color" : null;
-
-                if (colorProperty != null)
-                {
-                    properties.SetColor(colorProperty, PodiumColor(rank));
-                    r.SetPropertyBlock(properties);
-                }
-                else
-                {
-                    Debug.LogError("表彰台マテリアルに色プロパティ (_BaseColor / _Color) がありません。", block);
-                }
+                properties.SetColor(colorProperty, PodiumColor(rank));
+                r.SetPropertyBlock(properties);
             }
             else
             {
-                Debug.LogError("PodiumDisplay に表彰台マテリアルが設定されていません。", this);
+                Debug.LogError("表彰台プレハブのマテリアルに色プロパティ (_BaseColor / _Color) がありません。", block);
             }
+        }
+        else
+        {
+            Debug.LogError("表彰台プレハブに Renderer がありません。", block);
         }
 
         spawned.Add(block);
     }
-
     private void CreateCharacter(int playerIndex, float x, float podiumTop)
     {
         if (characterPrefabs == null || playerIndex < 0 || playerIndex >= characterPrefabs.Length) return;
