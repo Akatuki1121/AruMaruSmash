@@ -13,6 +13,9 @@ public class PodiumDisplay : MonoBehaviour
     [Header("キャラクター(要素番号 = プレイヤー番号。0 = 1P)")]
     [SerializeField] private GameObject[] characterPrefabs;
 
+    [Header("表彰台マテリアル")]
+    [SerializeField] private Material podiumMaterial;
+
     [Header("配置")]
     [Tooltip("台と台の間隔(ワールド単位)")]
     [SerializeField] private float podiumSpacing = 3.6f;
@@ -134,7 +137,35 @@ public class PodiumDisplay : MonoBehaviour
         try { block.tag = "Ground"; } catch (UnityException) { }
 
         Renderer r = block.GetComponent<Renderer>();
-        if (r != null) r.material.color = PodiumColor(rank);
+        if (r != null)
+        {
+            if (podiumMaterial != null)
+            {
+                // URP/Lit の専用マテリアルを共有し、順位色だけを Renderer ごとに上書きする
+                r.sharedMaterial = podiumMaterial;
+
+                MaterialPropertyBlock properties = new MaterialPropertyBlock();
+                r.GetPropertyBlock(properties);
+
+                string colorProperty = podiumMaterial.HasProperty("_BaseColor")
+                    ? "_BaseColor"
+                    : podiumMaterial.HasProperty("_Color") ? "_Color" : null;
+
+                if (colorProperty != null)
+                {
+                    properties.SetColor(colorProperty, PodiumColor(rank));
+                    r.SetPropertyBlock(properties);
+                }
+                else
+                {
+                    Debug.LogError("表彰台マテリアルに色プロパティ (_BaseColor / _Color) がありません。", block);
+                }
+            }
+            else
+            {
+                Debug.LogError("PodiumDisplay に表彰台マテリアルが設定されていません。", this);
+            }
+        }
 
         spawned.Add(block);
     }
