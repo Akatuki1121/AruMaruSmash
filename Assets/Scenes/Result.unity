@@ -1035,7 +1035,7 @@ MonoBehaviour:
   characterWorldHeight: 3
   characterYaw: 180
   setupCamera: 1
-  podiumMaterial: {fileID: 2100000, guid: 8e71b1c7a4d34e0b9c2f6a5d7e8b1c03, type: 2}
+  podiumPrefab: {fileID: 100000, guid: 7f4d3c2b1a094e6f8c5d2a1b9e7f6043, type: 3}
 --- !u!4 &1776465511
 Transform:
   m_ObjectHideFlags: 0
