@@ -11,8 +11,8 @@ using UnityEngine;
 /// </summary>
 public class MatchTimer : MonoBehaviour
 {
-    [Tooltip("試合時間(秒)。3分 = 180")]
-    [Min(1f)] public float matchSeconds = 180f;
+    [Tooltip("試合時間(秒)。3分 = 180")]   // α発表時は1分
+    [Min(1f)] public float matchSeconds = 60f;
 
     [Tooltip("残り時間を m:ss で表示するテキスト。未設定なら表示しない")]
     public TMP_Text timerText;

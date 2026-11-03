@@ -29,8 +29,8 @@ public static class GameFlowBootstrap
         root.AddComponent<SceneLoader>();
         root.AddComponent<ControllerConnectionMonitor>();
         root.AddComponent<JoyconConnectionMonitor>();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        root.AddComponent<DebugFlowPanel>();         // 仮UI。本UIができたら削除
-#endif
+//#if UNITY_EDITOR || DEVELOPMENT_BUILD
+//        root.AddComponent<DebugFlowPanel>();         // 仮UI。本UIができたら削除
+//#endif
     }
 }

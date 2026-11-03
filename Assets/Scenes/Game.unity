@@ -540,7 +540,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fc591b9a666c4c49aa5004890df53a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MatchTimer
-  matchSeconds: 180
+  matchSeconds: 60
   timerText: {fileID: 1853620392}
 --- !u!4 &783323528
 Transform:
@@ -2030,8 +2030,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WallTimeSequencer
   center: {fileID: 0}
-  startDelay: 30
-  interval: 30
+  startDelay: 10
+  interval: 10
   outerFirst: 1
   tieTolerance: 0.5
 --- !u!1 &1473787383
