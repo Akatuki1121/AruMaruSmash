@@ -23,6 +23,39 @@ public class JoyconManager : MonoBehaviour
 
     public static JoyconManager Instance => instance;
 
+    // Joycon に対応する個体識別子（シリアル番号、無ければパス）を返す。未登録なら null
+    public string GetDeviceId(Joycon joycon)
+    {
+        if (joycon == null)
+        {
+            return null;
+        }
+        string id;
+        return deviceIds.TryGetValue(joycon, out id) ? id : null;
+    }
+
+    // 個体識別子で接続中の Joycon を探す。切断中のものは返さない
+    public Joycon FindByDeviceId(string deviceId)
+    {
+        if (string.IsNullOrEmpty(deviceId))
+        {
+            return null;
+        }
+        for (int i = 0; i < j.Count; i++)
+        {
+            if (j[i].state == Joycon.state_.DROPPED || j[i].state == Joycon.state_.NOT_ATTACHED)
+            {
+                continue;
+            }
+            string id;
+            if (deviceIds.TryGetValue(j[i], out id) && id == deviceId)
+            {
+                return j[i];
+            }
+        }
+        return null;
+    }
+
     private void Awake()
     {
         if (instance != null && instance != this)
