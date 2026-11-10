@@ -68,9 +68,12 @@ public class MatchTimer : MonoBehaviour
     private void Finish()
     {
         GameFlowManager flow = GameFlowManager.Instance;
-        // Playing 中だけ遷移を要求する(単体再生時は遷移せず、イベントだけ飛ばす)。
-        // フェード中などで受け付けられなかった場合は、次フレームでもう一度試す
-        if (flow != null && flow.State == GameState.Playing && !flow.Request(GameEvent.MatchEnd))
+        // Playing中、またはGameシーン単体再生で参加者がいる場合はResultへの遷移を要求する。
+        // フェード中などで受け付けられなかった場合は、次フレームでもう一度試す。
+        bool canRequestResult = flow != null &&
+            (flow.State == GameState.Playing ||
+             (flow.State == GameState.Title && flow.Players.ActiveCount > 0));
+        if (canRequestResult && !flow.Request(GameEvent.MatchEnd))
         {
             return;
         }

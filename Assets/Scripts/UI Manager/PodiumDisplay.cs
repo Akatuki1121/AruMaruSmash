@@ -54,6 +54,7 @@ public class PodiumDisplay : MonoBehaviour
         }
 
         List<MatchStats.Entry> order = BuildDisplayOrder(ranking);
+        AddMissingCharacters(order);
         int n = order.Count;
 
         for (int i = 0; i < n; i++)
@@ -106,6 +107,29 @@ public class PodiumDisplay : MonoBehaviour
             order[1] = first;
         }
         return order;
+    }
+
+    private void AddMissingCharacters(List<MatchStats.Entry> order)
+    {
+        if (characterPrefabs == null) return;
+
+        HashSet<int> included = new HashSet<int>();
+        foreach (MatchStats.Entry entry in order)
+        {
+            included.Add(entry.playerIndex);
+        }
+
+        int count = Mathf.Min(characterPrefabs.Length, MatchStats.MAX_PLAYERS);
+        for (int playerIndex = 0; playerIndex < count; playerIndex++)
+        {
+            if (characterPrefabs[playerIndex] == null || included.Contains(playerIndex)) continue;
+
+            order.Add(new MatchStats.Entry
+            {
+                playerIndex = playerIndex,
+                rank = MatchStats.MAX_PLAYERS
+            });
+        }
     }
 
     private static float PodiumHeight(int rank)
@@ -189,6 +213,11 @@ public class PodiumDisplay : MonoBehaviour
         float sphereRadius = sphere != null ? sphere.radius : 0f;
 
         StripToVisual(character);
+        Rigidbody anchor = character.AddComponent<Rigidbody>();
+        anchor.isKinematic = true;
+        anchor.useGravity = false;
+        anchor.constraints = RigidbodyConstraints.FreezeAll;
+        anchor.detectCollisions = false;
 
         character.transform.SetParent(transform, false);
         character.transform.localRotation = Quaternion.Euler(0f, characterYaw, 0f);
