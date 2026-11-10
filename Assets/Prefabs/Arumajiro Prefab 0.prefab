@@ -212,8 +212,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  asymmetryFactor: 0.85
-  bounceForceMultiplier: 1.5
+  asymmetryFactor: 0.5
+  bounceForceMultiplier: 2.5
   upwardForcePerSpeed: 0.6
   minUpwardForce: 1.5
   maxUpwardForce: 8
@@ -362,6 +362,8 @@ MonoBehaviour:
   indicatorMinLength: 1.6
   indicatorMaxLength: 4.5
   indicatorWidth: 1
+  indicatorOutlineColor: {r: 0, g: 0, b: 0, a: 0.75}
+  indicatorOutlineWidth: 0.12
 --- !u!1001 &7878903932344301069
 PrefabInstance:
   m_ObjectHideFlags: 0
