@@ -10,6 +10,16 @@ public class OptionUIManager : BaseUIManager
     [SerializeField] private Sprite normalHowToPlaySprite;
     [SerializeField] private Sprite pressedHowToPlaySprite;
 
+    [Header("SEボタン")]
+    [SerializeField] private Image SEButtonImage;
+    [SerializeField] private Sprite normalSESprite;
+    [SerializeField] private Sprite pressedSESprite;
+
+    [Header("BGMボタン")]
+    [SerializeField] private Image BGMButtonImage;
+    [SerializeField] private Sprite normalBGMSprite;
+    [SerializeField] private Sprite pressedBGMSprite;
+
     [Header("戻るボタン")]
     [SerializeField] private Image backButtonImage;
     [SerializeField] private Sprite normalBackSprite;
