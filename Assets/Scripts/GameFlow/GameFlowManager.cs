@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 画面遷移の一元管理。GameState を変更できるのはこのクラスの Request だけ。
@@ -63,6 +65,24 @@ public class GameFlowManager : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
+    // Gameシーン単体再生時も、接続中のプレイヤーを登録する（Editorのみ）
+    private void Start()
+    {
+        if (SceneManager.GetActiveScene().name == SceneLoader.SCENE_GAME)
+        {
+            StartCoroutine(RegisterPlayersForEditor());
+        }
+    }
+
+    private IEnumerator RegisterPlayersForEditor()
+    {
+        yield return null;   // JoyconManager.Start のスキャンが終わるのを待つ
+
+        RegisterConnectedJoycons();
+    }
+#endif
+
     private void HandleLeaderChanged(int leader_index)
     {
         if (OnLeaderChanged != null)
@@ -119,6 +139,9 @@ public class GameFlowManager : MonoBehaviour
 
         // タイトル → キャラ選択（準備OK画面）
         Add(GameState.Title, GameEvent.Start, GameState.CharacterSelect, true,null, RegisterConnectedJoycons);
+
+        // Gameシーン単体再生時はTitle状態のまま試合終了を受け、参加者がいる場合だけResultへ進む
+        Add(GameState.Title, GameEvent.MatchEnd, GameState.Result, false, () => Players.ActiveCount > 0);
 
         Add(GameState.Title, GameEvent.OpenOption, GameState.Option, true);
 
