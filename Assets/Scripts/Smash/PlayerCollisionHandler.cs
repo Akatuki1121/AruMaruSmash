@@ -132,7 +132,7 @@ public class PlayerCollisionHandler : MonoBehaviour
     private void NotifyWallHitBreaker(Collision collision)
     {
         WallHitBreaker hitBreaker = collision.collider.GetComponent<WallHitBreaker>();
-        if (hitBreaker != null)
+        if (hitBreaker != null && hitBreaker.isActiveAndEnabled)
         {
             hitBreaker.RegisterHit(collision.relativeVelocity.magnitude);
         }
