@@ -46,6 +46,7 @@ public class TopDownPlayerMove : MonoBehaviour
     [Header("Joy-Con設定")]
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
     private Joycon joycon; // 接続されているJoy-Con本体への参照
+    private string joyconDeviceId; // 最初に取得した Joycon の個体識別子。再接続時に同じ個体を取り直すため
     public Joycon ActiveJoycon => joycon;   // ChargeDashControllerがボタン入力を読むために公開
 
     private KnockbackController knockback;                // 吹っ飛び状態の参照用（吹っ飛び状態の管理はKnockbackController側）
@@ -210,12 +211,36 @@ public class TopDownPlayerMove : MonoBehaviour
 
     private void TryAcquireJoyCon()
     {
-        if(joycon != null) return; // すでにJoy-Conを取得済み
+        if(joycon != null)
+        {
+            // 切断された Joycon は手放す。掴んだままだと、再接続しても二度と取得し直せない
+            if (joycon.state == Joycon.state_.DROPPED || joycon.state == Joycon.state_.NOT_ATTACHED)
+            {
+                joycon = null;
+            }
+            else
+            {
+                return; // すでにJoy-Conを取得済み
+            }
+        }
         if(JoyconManager.Instance == null) return; // JoyconManagerが存在しない場合は何もしない
         if (JoyconManager.Instance.j == null) return; // Joy-Conが接続されていない場合は何もしない
+
+        // 再取得は、最初に掴んだ個体（シリアル）で探す。リストの並び順で探すと、戻る順番次第で別プレイヤーの Joy-Con を掴んでしまう
+        if (!string.IsNullOrEmpty(joyconDeviceId))
+        {
+            joycon = JoyconManager.Instance.FindByDeviceId(joyconDeviceId);
+            if (joycon != null)
+            {
+                Debug.Log($"<color=yellow>【デバッグ】Playerオブジェクト {gameObject.name} が同じ Joy-Con に再接続しました (L/R: {(joycon.isLeft ? "L" : "R")})</color>");
+            }
+            return;
+        }
+
         if(joyconIndex < 0 || joyconIndex >= JoyconManager.Instance.j.Count) return; // インデックスが範囲外の場合は何もしない
 
         joycon = JoyconManager.Instance.j[joyconIndex];
+        joyconDeviceId = JoyconManager.Instance.GetDeviceId(joycon);
 
         Debug.Log($"<color=yellow>【デバッグ】Playerオブジェクト {gameObject.name} が Index {joyconIndex} のジョイコンを取得しました！ (L/R: {(joycon.isLeft ? "L" : "R")})</color>");
     }
