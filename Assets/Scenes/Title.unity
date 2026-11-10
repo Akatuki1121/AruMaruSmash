@@ -885,9 +885,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fec2cce0f6e49942b18ff6134478c0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OptionUIManager
-  howToPlayButtonImage: {fileID: 0}
-  normalHowToPlaySprite: {fileID: 0}
+  howToPlayButtonImage: {fileID: 1979209194}
+  normalHowToPlaySprite: {fileID: 21300000, guid: 9aa702296733c2747b9b7a102b582e13, type: 3}
   pressedHowToPlaySprite: {fileID: 0}
+  SEButtonImage: {fileID: 380556160}
+  normalSESprite: {fileID: 21300000, guid: 9eff251d7eaad104485a72ea86206dd2, type: 3}
+  pressedSESprite: {fileID: 0}
+  BGMButtonImage: {fileID: 380556160}
+  normalBGMSprite: {fileID: 21300000, guid: 2e631e0d6b361614296e6a094995dfaf, type: 3}
+  pressedBGMSprite: {fileID: 0}
   backButtonImage: {fileID: 1938336938}
   normalBackSprite: {fileID: 21300000, guid: 5e1a931c0f30ce34b9a506d04f5793e8, type: 3}
   pressedBackSprite: {fileID: 21300000, guid: 6c9c80433a2f22040af543cd30c1a249, type: 3}
