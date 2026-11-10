@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 /// 「チャージ → ダッシュ」を1セットで担当するクラス。
 ///
 /// 流れ：
-/// - ダッシュボタン長押し：チャージ。チャージ中は移動が遅くなる（進行方向は傾きで決められる）
+/// - ダッシュボタン長押し：チャージ。チャージ中は移動が遅くなる。ダッシュ方向はスティックで決める（開始時は上、離しても最後の向きを保持）
 /// - ボタンを離す：チャージ時間に応じた速さで、その瞬間の進行方向へダッシュ
 /// - ダッシュは dashDuration 秒かけて減速して終わる
 /// - チャージ中は足元に、ダッシュ方向のインジケーターを出す
@@ -27,6 +27,8 @@ public class ChargeDashController : MonoBehaviour
 
     // 方向ベクトルとみなす最小の大きさ
     private const float DIRECTION_EPSILON = 0.0001f;
+    // スティックを倒したとみなす最小の大きさ
+    private const float STICK_DEADZONE = 0.1f;
     // 最大チャージとみなす割合（浮動小数点の誤差対策）
     private const float MAX_CHARGE_RATIO = 0.999f;
     // 最大チャージ時間・ダッシュ持続時間の下限（0除算回避）
@@ -38,7 +40,7 @@ public class ChargeDashController : MonoBehaviour
     [Tooltip("最大チャージに必要な長押し時間（秒）")]
     public float chargeMaxTime = 2.5f;
 
-    [Tooltip("チャージ中の最大移動速度の倍率（0〜1）。小さいほど遅い。0にすると進行方向を決められなくなる")]
+    [Tooltip("チャージ中の最大移動速度の倍率（0〜1）。小さいほど遅い")]
     public float chargeMoveSpeedMultiplier = 0.5f;
 
     [Tooltip("チャージ開始後、速度がチャージ中の上限まで落ちるときの減速の強さ（速度/秒）。切り返しにも使う")]
@@ -162,7 +164,7 @@ public class ChargeDashController : MonoBehaviour
             return;
         }
 
-        if (phase != Phase.Dashing) TrackAimDirection();
+        if (phase == Phase.Charging) UpdateAimFromStick();
 
         switch (phase)
         {
@@ -220,6 +222,7 @@ public class ChargeDashController : MonoBehaviour
     {
         phase = Phase.Charging;
         chargeTime = 0f;
+        aimDirection = Vector3.forward;   // チャージ開始時は上（+Z）から
     }
 
     private void ReleaseDash()
@@ -249,12 +252,24 @@ public class ChargeDashController : MonoBehaviour
         hitStopPending = false;
     }
 
-    // 入力があるあいだ、最後に入力された水平方向を覚えておく（入力が無い状態で放したときのダッシュ方向になる）
-    private void TrackAimDirection()
+    // チャージ中、スティックを倒した向きを進行方向にする（離しても最後の向きを保持）
+    private void UpdateAimFromStick()
     {
-        Vector3 direction = move.WorldMoveDirection;
-        direction.y = 0f;
-        if (direction.sqrMagnitude > DIRECTION_EPSILON) aimDirection = direction.normalized;
+        Joycon joycon = move.ActiveJoycon;
+        if (joycon == null) return;
+
+        float[] stick = joycon.GetStick();
+        if (stick == null || stick.Length < 2) return;
+
+        // 横持ちでの画面基準の(右, 上)。BaseUIManager.GetStickと同じ向きの対応
+        float right = joycon.isLeft ? -stick[1] : stick[1];
+        float up = joycon.isLeft ? stick[0] : -stick[0];
+
+        Vector2 input = new(right, up);
+        if (input.magnitude < STICK_DEADZONE) return;   // デッドゾーン内は向きを変えない
+
+        input.Normalize();
+        aimDirection = new Vector3(input.x, 0f, input.y);
     }
 
     private bool ReadDashButtonHeld()
