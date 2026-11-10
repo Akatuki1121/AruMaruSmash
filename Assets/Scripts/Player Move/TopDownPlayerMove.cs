@@ -210,7 +210,18 @@ public class TopDownPlayerMove : MonoBehaviour
 
     private void TryAcquireJoyCon()
     {
-        if(joycon != null) return; // すでにJoy-Conを取得済み
+        if(joycon != null)
+        {
+            // 切断された Joycon は手放す。掴んだままだと、再接続しても二度と取得し直せない
+            if (joycon.state == Joycon.state_.DROPPED || joycon.state == Joycon.state_.NOT_ATTACHED)
+            {
+                joycon = null;
+            }
+            else
+            {
+                return; // すでにJoy-Conを取得済み
+            }
+        }
         if(JoyconManager.Instance == null) return; // JoyconManagerが存在しない場合は何もしない
         if (JoyconManager.Instance.j == null) return; // Joy-Conが接続されていない場合は何もしない
         if(joyconIndex < 0 || joyconIndex >= JoyconManager.Instance.j.Count) return; // インデックスが範囲外の場合は何もしない

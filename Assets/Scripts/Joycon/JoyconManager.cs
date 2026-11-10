@@ -18,6 +18,9 @@ public class JoyconManager : MonoBehaviour
     private float nextScanTime;
     private bool loggedNoJoycons;
 
+    // Open device id (serial number, or path) per Joycon, to avoid opening the same device twice
+    private readonly Dictionary<Joycon, string> deviceIds = new Dictionary<Joycon, string>();
+
     public static JoyconManager Instance => instance;
 
     private void Awake()
@@ -44,7 +47,9 @@ public class JoyconManager : MonoBehaviour
 
     private void Update()
     {
-        if (j.Count == 0 && Time.unscaledTime >= nextScanTime)
+        PruneDroppedJoycons();
+
+        if (Time.unscaledTime >= nextScanTime)
         {
             ScanAndAttach();
         }
@@ -52,6 +57,21 @@ public class JoyconManager : MonoBehaviour
         for (int i = 0; i < j.Count; i++)
         {
             j[i].Update();
+        }
+    }
+
+    // Remove dropped Joycons from the list; while they stay, the count never drops and no reconnect is accepted.
+    // The polling thread has already ended when DROPPED, so Detach is not called here.
+    private void PruneDroppedJoycons()
+    {
+        for (int i = j.Count - 1; i >= 0; i--)
+        {
+            if (j[i].state == Joycon.state_.DROPPED || j[i].state == Joycon.state_.NOT_ATTACHED)
+            {
+                deviceIds.Remove(j[i]);
+                j.RemoveAt(i);
+                Debug.Log("Joy-Con dropped and removed from the list; waiting for reconnect.");
+            }
         }
     }
 
@@ -77,6 +97,12 @@ public class JoyconManager : MonoBehaviour
                     continue;
                 }
 
+                string deviceId = string.IsNullOrEmpty(device.serial_number) ? device.path : device.serial_number;
+                if (deviceIds.ContainsValue(deviceId))
+                {
+                    continue;
+                }
+
                 IntPtr handle = HIDapi.hid_open_path(device.path);
                 if (handle == IntPtr.Zero)
                 {
@@ -87,6 +113,7 @@ public class JoyconManager : MonoBehaviour
                 HIDapi.hid_set_nonblocking(handle, 1);
                 Joycon joycon = new Joycon(handle, EnableIMU, EnableLocalize && EnableIMU, 0.05f, isLeft);
                 j.Add(joycon);
+                deviceIds[joycon] = deviceId;
 
                 byte leds = (byte)(1 << (j.Count - 1));
                 joycon.Attach(leds_: leds);
