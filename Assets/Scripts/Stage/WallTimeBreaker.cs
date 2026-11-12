@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 /// <summary>
@@ -32,5 +33,11 @@ public class WallTimeBreaker : MonoBehaviour
             return;
         }
         wall.ApplyProgress(progress);
+    }
+
+    // 壁の復活時に BreakableWall.Revive から呼ばれる。開始時刻を取り直してタイマーを頭から数え直す
+    public void ResetTimer()
+    {
+        activatedTime = Time.time;
     }
 }

@@ -1,3 +1,5 @@
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,11 +9,20 @@ using UnityEngine;
 ///   回数で壊す: WallHitBreaker  /  時間で壊す: WallTimeBreaker  /  両方付ければ先に条件を満たした方で壊れる
 /// 各 Breaker が進行度(0〜1)を ApplyProgress で伝え、色が crackedColor に近づく。
 /// 1に達する(Break が呼ばれる)と当たり判定ごと消える。
+/// 壊れた壁は Revive で元の状態(色・回数・タイマー)に戻して復活させられる。
 /// </summary>
 public class BreakableWall : MonoBehaviour
 {
     [Tooltip("進行するほど近づく色(壁の色が段階的に変わる)")]
     public Color crackedColor = new Color(0.35f, 0.3f, 0.3f, 1f);
+
+    // 壊れたとき／復活したときに通知する。管理側(WallRandomManager など)が購読する。
+    // 壊れた壁は SetActive(false) で見つけにくくなるため、管理側は壁の一覧を事前に保持しておく。
+    public event Action<BreakableWall> Broken;
+    public event Action<BreakableWall> Revived;
+
+    // 壊れている間は true。Revive で false に戻る
+    public bool IsBroken { get; private set; }
 
     // URP/Lit、Standard、および一般的なTint系シェーダーの色プロパティ。
     // マテリアルごとに HasProperty で確認し、存在するものだけを使用する。
@@ -91,7 +102,40 @@ public class BreakableWall : MonoBehaviour
 
     public void Break()
     {
+        if (IsBroken) return;
+
+        IsBroken = true;
         gameObject.SetActive(false);
+        Broken?.Invoke(this);
+    }
+
+    // 壊れた壁を元の状態に戻して復活させる。壊れていないときは何もしない。
+    // 進行度・色・各 Breaker の状態(回数・クールダウン・開始時刻)を全て初期化する。
+    public void Revive()
+    {
+        if (!IsBroken) return;
+
+        IsBroken = false;
+        currentProgress = 0f;
+        gameObject.SetActive(true);
+        ApplyTint(0f);
+        ResetBreakers();
+        Revived?.Invoke(this);
+    }
+
+    private void ResetBreakers()
+    {
+        WallHitBreaker hitBreaker = GetComponent<WallHitBreaker>();
+        if (hitBreaker != null)
+        {
+            hitBreaker.ResetHits();
+        }
+
+        WallTimeBreaker timeBreaker = GetComponent<WallTimeBreaker>();
+        if (timeBreaker != null)
+        {
+            timeBreaker.ResetTimer();
+        }
     }
 
     private void ApplyTint(float t)

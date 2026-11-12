@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 /// <summary>
@@ -7,6 +8,9 @@ using UnityEngine;
 [RequireComponent(typeof(BreakableWall))]
 public class WallHitBreaker : MonoBehaviour
 {
+    // まだ一度もぶつかっていない状態を表す値(クールダウン判定が必ず通る十分過去の時刻)
+    private const float NoHitTime = -999f;
+
     [Tooltip("この回数ぶつかると壁が消える")]
     [Min(1)] public int hitsToBreak = 3;
 
@@ -18,7 +22,7 @@ public class WallHitBreaker : MonoBehaviour
 
     private BreakableWall wall;
     private int hitCount;
-    private float lastHitTime = -999f;
+    private float lastHitTime = NoHitTime;
 
     private void Awake()
     {
@@ -40,5 +44,12 @@ public class WallHitBreaker : MonoBehaviour
             return;
         }
         wall.ApplyProgress((float)hitCount / hitsToBreak);
+    }
+
+    // 壁の復活時に BreakableWall.Revive から呼ばれる。回数とクールダウンを初期状態に戻す
+    public void ResetHits()
+    {
+        hitCount = 0;
+        lastHitTime = NoHitTime;
     }
 }

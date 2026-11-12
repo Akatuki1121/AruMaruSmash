@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
-    [HideInInspector] public float deadzone = 0.3f;
+    [HideInInspector] public float deadzone = 0.1f;
     [HideInInspector] public Rigidbody rb;
 
     private Vector2 moveInput = Vector2.zero;
