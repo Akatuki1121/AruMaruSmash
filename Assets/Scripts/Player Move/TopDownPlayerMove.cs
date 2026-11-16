@@ -92,6 +92,13 @@ public class TopDownPlayerMove : MonoBehaviour
     {
         TryAcquireJoyCon();
 
+        GameFlowManager flow = GameFlowManager.Instance;
+        if(flow != null && !flow.CanPlayerControl)
+        {
+            // プレイヤーが操作できない状態では入力を止める
+            return;
+        }
+
         // 吹っ飛び中・入力ロック中は入力による移動を止める。無効期間が始まった瞬間だけ、移動の状態をリセットする
         // （吹っ飛び状態・ロックの終了判定はKnockbackController側で行う）
         if (IsInputLocked)

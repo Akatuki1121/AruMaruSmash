@@ -156,6 +156,19 @@ public class ChargeDashController : MonoBehaviour
         bool held = ReadDashButtonHeld();
         if (!held) requireRelease = false;
 
+        // 試合中以外はチャージ・ダッシュを禁止
+        GameFlowManager flow = GameFlowManager.Instance;
+        if (flow != null && !flow.CanPlayerControl)
+        {
+            if (phase != Phase.Idle)
+            {
+                Cancel();
+            }
+
+            requireRelease = held;
+            return;
+        }
+
         // 吹っ飛ばされたら（入力ロックが終わるまで）、チャージもダッシュも中断する（終わっても、一度離すまでは再チャージしない）
         if (move.IsInputLocked)
         {

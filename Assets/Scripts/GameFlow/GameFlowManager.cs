@@ -21,6 +21,8 @@ public class GameFlowManager : MonoBehaviour
     /// </summary>
     public bool IsInputLocked { get; set; }
 
+    public bool CanPlayerControl => State == GameState.Playing;
+
     /// <summary>(遷移前, 遷移後)</summary>
     public event Action<GameState, GameState> OnStateChanged;
     public event Action<WaitingScreenMode> OnWaitingModeChanged;
@@ -164,10 +166,16 @@ public class GameFlowManager : MonoBehaviour
 
         // 全員が準備OKになったあと、
         // 誰かがスタートボタンを押したときだけゲーム開始
-        Add(GameState.CharacterSelect, GameEvent.StartGame, GameState.Playing, false, () => Players.ActiveCount > 0 && Players.AllConfirmed);
+        //Add(GameState.CharacterSelect, GameEvent.StartGame, GameState.Playing, false, () => Players.ActiveCount > 0 && Players.AllConfirmed);
 
         // タイトルに戻る
         Add(GameState.CharacterSelect, GameEvent.ToTitle, GameState.Title, false, null, ExitToTitle);
+
+        // ===== カウントダウン =====
+
+        Add(GameState.CharacterSelect, GameEvent.StartGame, GameState.Countdown, false, () => Players.ActiveCount > 0 && Players.AllConfirmed);
+
+        Add(GameState.Countdown, GameEvent.CountdownFinished, GameState.Playing, false);
 
 
         // ===== ゲーム中 =====

@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -11,7 +12,13 @@ using UnityEngine;
 /// </summary>
 public class MatchTimer : MonoBehaviour
 {
-    [Tooltip("試合時間(秒)。3分 = 180")]   // α発表時は1分
+    [Tooltip("カウントダウン時間(秒)。3秒")]
+    [Min(1f)] public float countdownSeconds = 3f;
+
+    [Tooltip("カウントダウンを表示するテキスト。未設定なら表示しない")]
+    public TMP_Text countdownText;
+
+    [Tooltip("試合時間(秒)。3分 = 180")]   // α・β発表時は1分
     [Min(1f)] public float matchSeconds = 60f;
 
     [Tooltip("残り時間を m:ss で表示するテキスト。未設定なら表示しない")]
@@ -20,6 +27,13 @@ public class MatchTimer : MonoBehaviour
     /// <summary>試合開始からの経過秒数(Playing 中のみ加算)</summary>
     public float ElapsedSeconds { get; private set; }
 
+    /// <summary>カウントダウン開始からの経過秒数(Playing 中のみ加算)</summary>
+    public float ElapsedCountdownSeconds { get; private set; }
+
+    public float CountdownSeconds
+    {
+        get { return Mathf.Max(0f, countdownSeconds - ElapsedCountdownSeconds); }
+    }
     public float RemainingSeconds
     {
         get { return Mathf.Max(0f, matchSeconds - ElapsedSeconds); }
@@ -31,6 +45,7 @@ public class MatchTimer : MonoBehaviour
     public event Action OnMatchFinished;
 
     private int m_shown_seconds = -1;
+    private int m_shown_countdown_seconds = -1;
 
     private void Start()
     {
@@ -43,17 +58,23 @@ public class MatchTimer : MonoBehaviour
         {
             return;
         }
-        if (!IsPlaying())
+
+        if (IsCountdown())
         {
+            ElapsedCountdownSeconds += Time.deltaTime;
+            RefreshCountdownText();
+
             return;
         }
 
-        ElapsedSeconds += Time.deltaTime;
-        RefreshText();
-
-        if (ElapsedSeconds >= matchSeconds)
+        if (IsPlaying())
         {
-            Finish();
+            ElapsedSeconds += Time.deltaTime;
+            RefreshText();
+            if (ElapsedSeconds >= matchSeconds)
+            {
+                Finish();
+            }
         }
     }
 
@@ -62,7 +83,12 @@ public class MatchTimer : MonoBehaviour
         // Game シーンを単体再生した場合、GameFlowManager は Title 状態で自動生成される。
         // その場合も試合を進めたいので、止めるのは Pause の間だけにする
         GameFlowManager flow = GameFlowManager.Instance;
-        return flow == null || flow.State != GameState.Pause;
+        return flow == null || flow.State == GameState.Playing;
+    }
+    private static bool IsCountdown()
+    {
+        GameFlowManager flow = GameFlowManager.Instance;
+        return flow == null || flow.State == GameState.Countdown;
     }
 
     private void Finish()
@@ -87,6 +113,7 @@ public class MatchTimer : MonoBehaviour
 
     private void RefreshText()
     {
+        // 試合時間表示
         if (timerText == null)
         {
             return;
@@ -99,5 +126,30 @@ public class MatchTimer : MonoBehaviour
         }
         m_shown_seconds = seconds;
         timerText.text = string.Format("{0}:{1:00}", seconds / 60, seconds % 60);
+    }
+
+    private void RefreshCountdownText()
+    {
+        // カウントダウン表示
+        if (countdownText == null)
+        {
+            return;
+        }
+
+        int seconds = Mathf.CeilToInt(CountdownSeconds);
+        if (seconds == m_shown_countdown_seconds)
+        {
+            if(seconds <= 0)
+            {
+                countdownText.text = string.Empty;
+
+                GameFlowManager flow = GameFlowManager.Instance;
+                flow.Request(GameEvent.CountdownFinished);
+
+            }
+            return;
+        }
+        m_shown_countdown_seconds = seconds;
+        countdownText.text = seconds.ToString();
     }
 }

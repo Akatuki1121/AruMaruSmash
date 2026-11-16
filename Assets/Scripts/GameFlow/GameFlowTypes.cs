@@ -14,7 +14,8 @@ public enum GameState
     Playing,
     Pause,
     Result,
-    Quit
+    Quit,
+    Countdown
 }
 
 /// <summary>
@@ -59,5 +60,6 @@ public enum GameEvent
     ToWaiting,
     MatchEnd,
     Retry,
-    AllPlayersLeft
+    AllPlayersLeft,
+    CountdownFinished
 }

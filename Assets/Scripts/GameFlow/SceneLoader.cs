@@ -63,6 +63,7 @@ public class SceneLoader : MonoBehaviour
                 return SCENE_LOBBY;
 
             case GameState.Playing:
+            case GameState.Countdown:
             case GameState.Pause:
                 return SCENE_GAME;
 
