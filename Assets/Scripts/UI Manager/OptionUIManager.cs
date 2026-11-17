@@ -42,6 +42,8 @@ public class OptionUIManager : BaseUIManager
         UIInputDirection.None;
 
     private Vector3 howToPlayOriginalScale;
+    private Vector3 SEOriginalScale;
+    private Vector3 BGMOriginalScale;
     private Vector3 backOriginalScale;
 
     private bool isPressing = false;
@@ -54,6 +56,18 @@ public class OptionUIManager : BaseUIManager
         {
             howToPlayOriginalScale =
                 howToPlayButtonImage.rectTransform.localScale;
+        }
+
+        if (SEButtonImage != null)
+        {
+            SEOriginalScale =
+                SEButtonImage.rectTransform.localScale;
+        }
+
+        if (BGMButtonImage != null)
+        {
+            BGMOriginalScale =
+                BGMButtonImage.rectTransform.localScale;
         }
 
         if (backButtonImage != null)
@@ -106,11 +120,9 @@ public class OptionUIManager : BaseUIManager
 
         if (!GetConfirmButtonDown()) return;
 
-        if (selectV == 0 || selectV == 3)
-        {
-            StartCoroutine(PressButtonRoutine());
-        }
-        else if (selectV == 1)
+        StartCoroutine(PressButtonRoutine());
+        
+        if (selectV == 1)
         {
             // BGMスライダー操作
         }
@@ -128,6 +140,18 @@ public class OptionUIManager : BaseUIManager
             howToPlayButtonImage,
             howToPlayOriginalScale,
             selectV == 0
+        );
+
+        SetButtonScale(
+            SEButtonImage,
+            SEOriginalScale,
+            selectV == 1
+        );
+
+        SetButtonScale(
+            BGMButtonImage,
+            BGMOriginalScale,
+            selectV == 2
         );
 
         SetButtonScale(
