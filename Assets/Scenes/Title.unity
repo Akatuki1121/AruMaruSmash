@@ -816,9 +816,11 @@ MonoBehaviour:
   SEButtonImage: {fileID: 1360734970}
   normalSESprite: {fileID: 21300000, guid: 9eff251d7eaad104485a72ea86206dd2, type: 3}
   pressedSESprite: {fileID: 0}
+  SESlider: {fileID: 1100909626}
   BGMButtonImage: {fileID: 587570975}
   normalBGMSprite: {fileID: 21300000, guid: 2e631e0d6b361614296e6a094995dfaf, type: 3}
   pressedBGMSprite: {fileID: 0}
+  BGMSlider: {fileID: 1612461626}
   backButtonImage: {fileID: 1938336938}
   normalBackSprite: {fileID: 21300000, guid: 5e1a931c0f30ce34b9a506d04f5793e8, type: 3}
   pressedBackSprite: {fileID: 21300000, guid: 6c9c80433a2f22040af543cd30c1a249, type: 3}
@@ -1353,42 +1355,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 623279559}
   m_CullTransparentMesh: 1
---- !u!1 &641389020
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 641389021}
-  m_Layer: 5
-  m_Name: SE Setting
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &641389021
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 641389020}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1100909624}
-  m_Father: {fileID: 828777402}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &781341192
 GameObject:
   m_ObjectHideFlags: 0
@@ -1561,8 +1527,8 @@ RectTransform:
   m_Children:
   - {fileID: 487402652}
   - {fileID: 1829261824}
-  - {fileID: 641389021}
-  - {fileID: 1127467325}
+  - {fileID: 1100909624}
+  - {fileID: 1612461624}
   - {fileID: 1979209192}
   - {fileID: 1360734968}
   - {fileID: 587570973}
@@ -1715,6 +1681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1100909624}
   - component: {fileID: 1100909625}
+  - component: {fileID: 1100909626}
   m_Layer: 5
   m_Name: SE Slider
   m_TagString: Untagged
@@ -1737,7 +1704,7 @@ RectTransform:
   - {fileID: 370765232}
   - {fileID: 557989076}
   - {fileID: 206271337}
-  m_Father: {fileID: 641389021}
+  m_Father: {fileID: 828777402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1789,48 +1756,25 @@ MonoBehaviour:
   m_HandleRect: {fileID: 233263470}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 1
+  m_MaxValue: 3
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &1127467324
-GameObject:
+--- !u!114 &1100909626
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1127467325}
-  m_Layer: 5
-  m_Name: BGM Setting
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1127467325
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1127467324}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1612461624}
-  m_Father: {fileID: 828777402}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -300}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_GameObject: {fileID: 1100909623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d78e00e9ce160e42bb4247f94897f31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SliderScript
+  slider: {fileID: 1100909625}
 --- !u!1 &1192678574
 GameObject:
   m_ObjectHideFlags: 0
@@ -2293,6 +2237,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1612461624}
   - component: {fileID: 1612461625}
+  - component: {fileID: 1612461626}
   m_Layer: 5
   m_Name: BGM Slider
   m_TagString: Untagged
@@ -2315,11 +2260,11 @@ RectTransform:
   - {fileID: 831517358}
   - {fileID: 1199044797}
   - {fileID: 1871169724}
-  m_Father: {fileID: 1127467325}
+  m_Father: {fileID: 828777402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -300}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1612461625
@@ -2367,12 +2312,25 @@ MonoBehaviour:
   m_HandleRect: {fileID: 447579236}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 1
+  m_MaxValue: 3
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1612461626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1612461623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d78e00e9ce160e42bb4247f94897f31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SliderScript
+  slider: {fileID: 1612461625}
 --- !u!1001 &1702627618
 PrefabInstance:
   m_ObjectHideFlags: 0

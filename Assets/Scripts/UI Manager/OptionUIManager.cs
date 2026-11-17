@@ -15,10 +15,16 @@ public class OptionUIManager : BaseUIManager
     [SerializeField] private Sprite normalSESprite;
     [SerializeField] private Sprite pressedSESprite;
 
+    [Header("SEスライダー")]
+    [SerializeField] private SliderScript SESlider;
+
     [Header("BGMボタン")]
     [SerializeField] private Image BGMButtonImage;
     [SerializeField] private Sprite normalBGMSprite;
     [SerializeField] private Sprite pressedBGMSprite;
+
+    [Header("BGMスライダー")]
+    [SerializeField] private SliderScript BGMSlider;
 
     [Header("戻るボタン")]
     [SerializeField] private Image backButtonImage;
@@ -118,18 +124,12 @@ public class OptionUIManager : BaseUIManager
         // 選択中のボタンを拡大
         UpdateButtonScale();
 
+        // スライダー操作
+        ChangeSliderValue(selectV);
+
         if (!GetConfirmButtonDown()) return;
 
         StartCoroutine(PressButtonRoutine());
-        
-        if (selectV == 1)
-        {
-            // BGMスライダー操作
-        }
-        else if (selectV == 2)
-        {
-            // SEスライダー操作
-        }
 
         Debug.Log($"Optionの選択は：{selectV}");
     }
@@ -252,5 +252,43 @@ public class OptionUIManager : BaseUIManager
         }
 
         isPressing = false;
+    }
+
+    // スライダー操作
+    public void ChangeSliderValue(int select)
+    {
+        UIInputDirection direction = GetStick();
+        int amount = 0;
+
+        // スティックを倒した瞬間だけ選択変更
+        if (direction != UIInputDirection.None &&
+            previousDirection == UIInputDirection.None)
+        {
+            switch (direction)
+            {
+                case UIInputDirection.Left:
+                    amount = -1;
+                    break;
+
+                case UIInputDirection.Right:
+                    amount = 1;
+                    break;
+            }
+        }
+
+        if (select == 1)
+        {
+            // SEスライダー操作
+            SESlider.SliderUpdate(amount);
+        }
+        else if (select == 2)
+        {
+            // BGMスライダー操作
+            BGMSlider.SliderUpdate(amount);
+        }
+        else
+        {
+            return;
+        }
     }
 }
