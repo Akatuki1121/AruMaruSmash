@@ -7,6 +7,6 @@ public class SliderScript : MonoBehaviour
 
     public void SliderUpdate(int amount)
     {
-        slider.value = amount;
+        slider.value += amount;
     }
 }

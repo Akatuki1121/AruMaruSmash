@@ -119,13 +119,17 @@ public class OptionUIManager : BaseUIManager
             );
         }
 
-        previousDirection = direction;
-
         // 選択中のボタンを拡大
         UpdateButtonScale();
 
         // スライダー操作
-        ChangeSliderValue(selectV);
+        if(selectV == 1 || selectV == 2)
+        {
+
+            ChangeSliderValue(selectV);
+        }
+
+        previousDirection = direction;
 
         if (!GetConfirmButtonDown()) return;
 
@@ -258,6 +262,8 @@ public class OptionUIManager : BaseUIManager
     public void ChangeSliderValue(int select)
     {
         UIInputDirection direction = GetStick();
+
+
         int amount = 0;
 
         // スティックを倒した瞬間だけ選択変更
@@ -276,6 +282,8 @@ public class OptionUIManager : BaseUIManager
             }
         }
 
+        previousDirection = direction;
+
         if (select == 1)
         {
             // SEスライダー操作
@@ -285,10 +293,6 @@ public class OptionUIManager : BaseUIManager
         {
             // BGMスライダー操作
             BGMSlider.SliderUpdate(amount);
-        }
-        else
-        {
-            return;
         }
     }
 }
