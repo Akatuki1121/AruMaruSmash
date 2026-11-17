@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 /// 「チャージ → ダッシュ」を1セットで担当するクラス。
 ///
 /// 流れ：
-/// - ダッシュボタン長押し：チャージ。チャージ中は移動が遅くなる。ダッシュ方向はスティックで決める（開始時は上、離しても最後の向きを保持）
+/// - ダッシュボタン長押し：チャージ。チャージ中は移動が遅くなる。ダッシュ方向はジャイロまたはスティックで決める（開始時は上、離しても最後の向きを保持）
 /// - ボタンを離す：チャージ時間に応じた速さで、その瞬間の進行方向へダッシュ
 /// - ダッシュは dashDuration 秒かけて減速して終わる
 /// - チャージ中は足元に、ダッシュ方向のインジケーターを出す
@@ -18,6 +18,8 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(TopDownPlayerMove))]
 public class ChargeDashController : MonoBehaviour
 {
+    public enum AimInputMode { Gyro, Stick }
+
     public enum Phase
     {
         Idle,
@@ -27,8 +29,8 @@ public class ChargeDashController : MonoBehaviour
 
     // 方向ベクトルとみなす最小の大きさ
     private const float DIRECTION_EPSILON = 0.0001f;
-    // スティックを倒したとみなす最小の大きさ
-    private const float STICK_DEADZONE = 0.1f;
+    // 入力があったとみなす最小の大きさ
+    private const float AIM_DEADZONE = 0.1f;
     // 最大チャージとみなす割合（浮動小数点の誤差対策）
     private const float MAX_CHARGE_RATIO = 0.999f;
     // 最大チャージ時間・ダッシュ持続時間の下限（0除算回避）
@@ -37,6 +39,9 @@ public class ChargeDashController : MonoBehaviour
     private const float INDICATOR_LIFT_RATIO = 0.05f;
 
     [Header("チャージ")]
+    [Tooltip("チャージ中のダッシュ方向を決める入力。プレイヤーの通常移動入力とは独立して設定できる")]
+    public AimInputMode aimInputMode = AimInputMode.Gyro;
+
     [Tooltip("最大チャージに必要な長押し時間（秒）")]
     public float chargeMaxTime = 2.5f;
 
@@ -185,7 +190,7 @@ public class ChargeDashController : MonoBehaviour
             return;
         }
 
-        if (phase == Phase.Charging) UpdateAimFromStick();
+        if (phase == Phase.Charging) UpdateAimFromInput();
 
         switch (phase)
         {
@@ -273,21 +278,30 @@ public class ChargeDashController : MonoBehaviour
         hitStopPending = false;
     }
 
-    // チャージ中、スティックを倒した向きを進行方向にする（離しても最後の向きを保持）
-    private void UpdateAimFromStick()
+    // チャージ中、選択した入力の向きを進行方向にする（離しても最後の向きを保持）
+    private void UpdateAimFromInput()
     {
         Joycon joycon = move.ActiveJoycon;
         if (joycon == null) return;
 
-        float[] stick = joycon.GetStick();
-        if (stick == null || stick.Length < 2) return;
+        Vector2 input;
+        if (aimInputMode == AimInputMode.Gyro)
+        {
+            Vector3 accel = joycon.GetAccel();
+            input = new Vector2(accel.x, -accel.y);
+        }
+        else
+        {
+            float[] stick = joycon.GetStick();
+            if (stick == null || stick.Length < 2) return;
 
-        // 横持ちでの画面基準の(右, 上)。BaseUIManager.GetStickと同じ向きの対応
-        float right = joycon.isLeft ? -stick[1] : stick[1];
-        float up = joycon.isLeft ? stick[0] : -stick[0];
+            // 横持ちでの画面基準の(右, 上)。BaseUIManager.GetStickと同じ向きの対応
+            float right = joycon.isLeft ? -stick[1] : stick[1];
+            float up = joycon.isLeft ? stick[0] : -stick[0];
+            input = new Vector2(right, up);
+        }
 
-        Vector2 input = new(right, up);
-        if (input.magnitude < STICK_DEADZONE) return;   // デッドゾーン内は向きを変えない
+        if (input.magnitude < AIM_DEADZONE) return;   // デッドゾーン内は向きを変えない
 
         input.Normalize();
         aimDirection = new Vector3(input.x, 0f, input.y);

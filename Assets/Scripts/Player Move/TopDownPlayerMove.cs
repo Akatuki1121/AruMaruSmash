@@ -7,13 +7,7 @@
 
 public class TopDownPlayerMove : MonoBehaviour
 {
-    public enum MoveInputMode { Gyro, Stick }
-
-    [Header("移動の入力方法")]
-    [Tooltip("Gyro=Joy-Conを傾けて動かす（加速度）/ Stick=スティックで動かす。実行中でも切り替え可能")]
-    public MoveInputMode inputMode = MoveInputMode.Gyro;
-
-    // 現在の入力値。Gyroなら加速度、Stickならスティックを「傾きと同じ形式」に直した値が入る
+    // 現在のジャイロ入力値
     public Vector3 JoyAccel;
 
     [Header("通常移動（接地中）")]
@@ -208,7 +202,7 @@ public class TopDownPlayerMove : MonoBehaviour
             return;
         }
 
-        JoyAccel = ReadMoveInput();
+        JoyAccel = joycon.GetAccel();
 
         Debug.Log($"{gameObject.name} (Index:{joyconIndex}) のAccel: {JoyAccel}");
 
@@ -237,22 +231,6 @@ public class TopDownPlayerMove : MonoBehaviour
         // 方向は360度、速度倍率は傾き量で決める
         moveDirection = inputVector.normalized;
         tiltAmount = usableMagnitude;
-    }
-
-    // 入力方法に応じて、移動の入力値を返す。戻り値は「x=右、y=-上」の形式（Gyro・Stick共通）
-    private Vector3 ReadMoveInput()
-    {
-        if (inputMode == MoveInputMode.Gyro) return joycon.GetAccel();
-
-        float[] stick = joycon.GetStick();
-        if (stick == null || stick.Length < 2) return Vector3.zero;
-
-        // Joy-Conは横持ちなので、左右で軸の向きが逆になる（BaseUIManager.GetStickと同じ対応）
-        float right = joycon.isLeft ? -stick[1] : stick[1];
-        float up = joycon.isLeft ? stick[0] : -stick[0];
-
-        Vector2 v = Vector2.ClampMagnitude(new Vector2(right, up), 1f);
-        return new Vector3(v.x, -v.y, 0f);
     }
 
     private void TryAcquireJoyCon()
