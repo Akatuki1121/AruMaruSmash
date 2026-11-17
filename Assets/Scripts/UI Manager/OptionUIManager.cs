@@ -15,10 +15,16 @@ public class OptionUIManager : BaseUIManager
     [SerializeField] private Sprite normalSESprite;
     [SerializeField] private Sprite pressedSESprite;
 
+    [Header("SEスライダー")]
+    [SerializeField] private SliderScript SESlider;
+
     [Header("BGMボタン")]
     [SerializeField] private Image BGMButtonImage;
     [SerializeField] private Sprite normalBGMSprite;
     [SerializeField] private Sprite pressedBGMSprite;
+
+    [Header("BGMスライダー")]
+    [SerializeField] private SliderScript BGMSlider;
 
     [Header("戻るボタン")]
     [SerializeField] private Image backButtonImage;
@@ -42,6 +48,8 @@ public class OptionUIManager : BaseUIManager
         UIInputDirection.None;
 
     private Vector3 howToPlayOriginalScale;
+    private Vector3 SEOriginalScale;
+    private Vector3 BGMOriginalScale;
     private Vector3 backOriginalScale;
 
     private bool isPressing = false;
@@ -54,6 +62,18 @@ public class OptionUIManager : BaseUIManager
         {
             howToPlayOriginalScale =
                 howToPlayButtonImage.rectTransform.localScale;
+        }
+
+        if (SEButtonImage != null)
+        {
+            SEOriginalScale =
+                SEButtonImage.rectTransform.localScale;
+        }
+
+        if (BGMButtonImage != null)
+        {
+            BGMOriginalScale =
+                BGMButtonImage.rectTransform.localScale;
         }
 
         if (backButtonImage != null)
@@ -99,25 +119,21 @@ public class OptionUIManager : BaseUIManager
             );
         }
 
-        previousDirection = direction;
-
         // 選択中のボタンを拡大
         UpdateButtonScale();
 
+        // スライダー操作
+        if(selectV == 1 || selectV == 2)
+        {
+
+            ChangeSliderValue(selectV);
+        }
+
+        previousDirection = direction;
+
         if (!GetConfirmButtonDown()) return;
 
-        if (selectV == 0 || selectV == 3)
-        {
-            StartCoroutine(PressButtonRoutine());
-        }
-        else if (selectV == 1)
-        {
-            // BGMスライダー操作
-        }
-        else if (selectV == 2)
-        {
-            // SEスライダー操作
-        }
+        StartCoroutine(PressButtonRoutine());
 
         Debug.Log($"Optionの選択は：{selectV}");
     }
@@ -128,6 +144,18 @@ public class OptionUIManager : BaseUIManager
             howToPlayButtonImage,
             howToPlayOriginalScale,
             selectV == 0
+        );
+
+        SetButtonScale(
+            SEButtonImage,
+            SEOriginalScale,
+            selectV == 1
+        );
+
+        SetButtonScale(
+            BGMButtonImage,
+            BGMOriginalScale,
+            selectV == 2
         );
 
         SetButtonScale(
@@ -228,5 +256,43 @@ public class OptionUIManager : BaseUIManager
         }
 
         isPressing = false;
+    }
+
+    // スライダー操作
+    public void ChangeSliderValue(int select)
+    {
+        UIInputDirection direction = GetStick();
+
+
+        int amount = 0;
+
+        // スティックを倒した瞬間だけ選択変更
+        if (direction != UIInputDirection.None &&
+            previousDirection == UIInputDirection.None)
+        {
+            switch (direction)
+            {
+                case UIInputDirection.Left:
+                    amount = -1;
+                    break;
+
+                case UIInputDirection.Right:
+                    amount = 1;
+                    break;
+            }
+        }
+
+        previousDirection = direction;
+
+        if (select == 1)
+        {
+            // SEスライダー操作
+            SESlider.SliderUpdate(amount);
+        }
+        else if (select == 2)
+        {
+            // BGMスライダー操作
+            BGMSlider.SliderUpdate(amount);
+        }
     }
 }
