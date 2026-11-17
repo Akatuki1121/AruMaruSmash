@@ -1042,6 +1042,10 @@ MonoBehaviour:
   - {fileID: 1017920493824726076, guid: 2cd693ef1e805394caff72586559384e, type: 3}
   - {fileID: 1017920493824726076, guid: f3ca9864a2c203747bedf7c913d278e2, type: 3}
   - {fileID: 1017920493824726076, guid: dbb5b5324381aa64d9aa22e0f13e155a, type: 3}
+  respawnDelay: 0.5
+  emergeDuration: 0.5
+  invincibleAfterEmerge: 0.5
+  blinkInterval: 0.15
 --- !u!54 &1354711063
 Rigidbody:
   m_ObjectHideFlags: 0
