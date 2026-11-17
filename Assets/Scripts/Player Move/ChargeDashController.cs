@@ -169,6 +169,14 @@ public class ChargeDashController : MonoBehaviour
             return;
         }
 
+        // 復活の出現演出中はチャージできない（終わっても、一度ボタンを離すまでは再チャージしない）
+        if (move.IsEmerging)
+        {
+            if (phase != Phase.Idle) Cancel();
+            requireRelease = held;
+            return;
+        }
+
         // 吹っ飛ばされたら（入力ロックが終わるまで）、チャージもダッシュも中断する（終わっても、一度離すまでは再チャージしない）
         if (move.IsInputLocked)
         {

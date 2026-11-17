@@ -52,7 +52,10 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
         if (movement == null || targetAnimator == null) return;
 
         float baseSpeed = movement.GroundMaxSpeed;
-        float currentVelocity = movement.GetInputMoveVelocity().magnitude;
+        GameFlowManager flow = GameFlowManager.Instance;
+        float currentVelocity = flow != null && flow.State == GameState.Countdown
+            ? movement.tiltAmount * baseSpeed
+            : movement.GetInputMoveVelocity().magnitude;
         targetAnimator.speed = baseSpeed > 0.001f && currentVelocity > 0f
             ? currentVelocity / baseSpeed
             : 0f;
@@ -72,7 +75,7 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
         facingPivot.rotation = Quaternion.Euler(0f, currentYaw + yawOffset, 0f);
     }
 
-    /// <summary>実際に動いている方向（ワールド・水平）を返す。止まっている間はfalseで、直前の向きを保つ。</summary>
+    /// <summary>移動中は実際の移動方向、停止中は入力方向を返す。</summary>
     private bool TryGetTravelDirection(out Vector3 direction)
     {
         direction = Vector3.zero;
@@ -80,6 +83,10 @@ public sealed class AnimatorSpeedByPlayerVelocity : MonoBehaviour
         if (movement != null)
         {
             direction = movement.GetInputMoveVelocity();
+            direction.y = 0f;
+            if (direction.sqrMagnitude > minFacingSpeed * minFacingSpeed) return true;
+
+            direction = movement.WorldMoveDirection;
             direction.y = 0f;
             if (direction.sqrMagnitude > minFacingSpeed * minFacingSpeed) return true;
         }

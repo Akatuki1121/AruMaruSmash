@@ -63,6 +63,9 @@ public class TopDownPlayerMove : MonoBehaviour
     // 衝突後の入力無効期間（knockbackLockDurationの秒数ぶん。着地したかどうかでは解除されない）
     public bool IsInputLocked => knockback != null && knockback.IsLocked;   // 時間だけで判定（接地・空中は関係ない）
 
+    // 復活の出現演出中（床の下からせり上がっている間）。移動とチャージは止まり、方向の入力だけ受け付ける。PlayerRespawnEffectが切り替える
+    public bool IsEmerging { get; set; }
+
     private ChargeDashController chargeDash;              // チャージ→ダッシュの担当（無くても動く）
 
     // 衝突の勝敗判定に使う「ダッシュ中」フラグ（実体はChargeDashController）
@@ -100,9 +103,22 @@ public class TopDownPlayerMove : MonoBehaviour
         TryAcquireJoyCon();
 
         GameFlowManager flow = GameFlowManager.Instance;
-        if(flow != null && !flow.CanPlayerControl)
+        if (flow != null && !flow.CanPlayerControl)
         {
-            // プレイヤーが操作できない状態では入力を止める
+            // カウントダウン中は入力方向だけ更新し、移動速度は0に保つ
+            if (flow.State == GameState.Countdown)
+            {
+                GetMoveDirection();
+                currentSpeed = 0f;
+            }
+            return;
+        }
+
+        // 出現演出中は移動できない。方向の入力（進行方向・傾き）だけは更新し続け、速度は0のまま保つ
+        if (IsEmerging)
+        {
+            GetMoveDirection();
+            currentSpeed = 0f;
             return;
         }
 
