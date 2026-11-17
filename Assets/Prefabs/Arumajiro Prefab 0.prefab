@@ -160,7 +160,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f04af9860e414c448b4a93c918f3c6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopDown_PlayerMove
-  inputMode: 0
   JoyAccel: {x: 0, y: 0, z: 0}
   groundMoveSpeed: 50
   groundAcceleration: 2.5
@@ -196,7 +195,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KnockbackController
   groundChecker: {fileID: 4569837613208632187}
-  knockbackLockDuration: 1
+  knockbackLockDuration: 0.5
   knockbackDecaySpeed: 4
   knockbackGravityMultiplier: 3
   airControlKnockbackThreshold: 0.5
@@ -213,7 +212,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  asymmetryFactor: 0.5
+  asymmetryFactor: 0
   bounceForceMultiplier: 2.5
   upwardForcePerSpeed: 0.6
   minUpwardForce: 1.5
@@ -350,6 +349,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11a33d805ac992045ac7cab352b2dfea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChargeDashController
+  aimInputMode: 0
   chargeMaxTime: 2.5
   chargeMoveSpeedMultiplier: 0.5
   chargeDeceleration: 15
