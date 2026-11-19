@@ -205,6 +205,16 @@ public class KnockbackController : MonoBehaviour
     }
 
     /// <summary>
+    /// 衝突後の水平速度を設定し、入力移動をロックする。
+    /// </summary>
+    public void SetCollisionVelocity(Vector3 horizontalVelocity)
+    {
+        horizontalVelocity.y = 0f;
+        knockbackVelocity = horizontalVelocity;
+        knockbackLockTimer = KnockbackLockDuration;
+    }
+
+    /// <summary>
     /// Y方向（上向き）の吹っ飛び初速を与え、吹っ飛び状態（着地まで継続）にする。
     /// 落下は重力に任せるため、ここでは初速の代入のみ行う。
     /// </summary>

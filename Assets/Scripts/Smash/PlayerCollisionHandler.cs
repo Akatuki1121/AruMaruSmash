@@ -223,8 +223,7 @@ public class PlayerCollisionHandler : MonoBehaviour
         return Random.value < 0.5f;
     }
 
-    // ボタン加速中の衝突処理。勝者は衝突前の速度に戻して反発させず、敗者だけが勝者の法線速度を受け取って吹っ飛ぶ。
-    // 敗者は加速中でも必ず吹っ飛び状態（入力ロック）になる。
+    // ボタン加速中の衝突処理。法線方向の速度を交換して反発させ、敗者だけが上方向にも吹っ飛ぶ。
     private static void ResolveAttackCollision(PlayerCollisionHandler a, PlayerCollisionHandler b, Vector3 normal,
                                                Vector3 velA, Vector3 velB, bool aAttack, bool bAttack)
     {
@@ -240,11 +239,13 @@ public class PlayerCollisionHandler : MonoBehaviour
         float winnerN = Vector3.Dot(winnerVel, normal);
         float loserN = Vector3.Dot(loserVel, normal);
 
-        // 敗者の法線速度を勝者の法線速度に置き換える（接線方向はそのまま）
-        Vector3 loserResult = loserVel - (normal * loserN) + (normal * winnerN);
-        Vector3 loserDelta = (loserResult - loserVel) * a.BounceForceMultiplier;
+        // 法線方向の速度変化を両者に反対向きで与え、反発倍率をかける（接線方向はそのまま）
+        float bounceMultiplier = a.BounceForceMultiplier;
+        Vector3 winnerResult = winnerVel + (normal * (loserN - winnerN) * bounceMultiplier);
+        Vector3 loserResult = loserVel + (normal * (winnerN - loserN) * bounceMultiplier);
 
-        loser.knockbackController.ApplyKnockback(loserDelta);
+        winner.knockbackController.SetCollisionVelocity(winnerResult);
+        loser.knockbackController.SetCollisionVelocity(loserResult);
 
         float closingSpeed = Mathf.Abs(Vector3.Dot(velA, normal) - Vector3.Dot(velB, normal));
         float upForce = Mathf.Clamp(closingSpeed * a.UpwardForcePerSpeed, a.MinUpwardForce, a.MaxUpwardForce);
