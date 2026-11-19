@@ -213,7 +213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65188d7a19a648a4fb1149dc15992051, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisionHandler
-  asymmetryFactor: 0.5
+  asymmetryFactor: 0
   bounceForceMultiplier: 2.5
   upwardForcePerSpeed: 0.6
   minUpwardForce: 1.5
