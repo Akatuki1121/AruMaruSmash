@@ -205,6 +205,17 @@ public class KnockbackController : MonoBehaviour
     }
 
     /// <summary>
+    /// 壁の跳ね返り専用。XZ方向の速度を加算するだけで、入力ロックは掛けない。
+    /// ロックが掛かるとChargeDashControllerが吹っ飛びとみなしてチャージを中断してしまうため、
+    /// チャージ中に壁へ当たったときは、跳ね返ってもチャージが続くようこちらを使う。
+    /// </summary>
+    public void ApplyWallBounce(Vector3 horizontalForce)
+    {
+        horizontalForce.y = 0f;
+        knockbackVelocity += horizontalForce;
+    }
+
+    /// <summary>
     /// 衝突後の水平速度を設定し、入力移動をロックする。
     /// </summary>
     public void SetCollisionVelocity(Vector3 horizontalVelocity)

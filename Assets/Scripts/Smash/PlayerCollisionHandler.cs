@@ -162,7 +162,18 @@ public class PlayerCollisionHandler : MonoBehaviour
             if (velocityTowardWall >= -0.01f) return;
 
             Vector3 reflectedVelocity = Vector3.Reflect(velocity, normal);
-            knockbackController.ApplyKnockback((reflectedVelocity - velocity) * Mathf.Max(0f, wallBounceMultiplier));
+            Vector3 bounceForce = (reflectedVelocity - velocity) * Mathf.Max(0f, wallBounceMultiplier);
+
+            // チャージ中は、跳ね返りで入力ロックが掛かるとチャージまで消えてしまう（#119）。
+            // 跳ね返りの速度だけを足し、チャージは続ける
+            if (chargeDash != null && chargeDash.IsCharging)
+            {
+                knockbackController.ApplyWallBounce(bounceForce);
+            }
+            else
+            {
+                knockbackController.ApplyKnockback(bounceForce);
+            }
             return;
         }
     }
