@@ -1,6 +1,7 @@
 
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class OptionUIManager : BaseUIManager
@@ -82,6 +83,8 @@ public class OptionUIManager : BaseUIManager
                 backButtonImage.rectTransform.localScale;
         }
 
+        SyncVolumeSliders();
+
         UpdateButtonSprites();
     }
 
@@ -89,6 +92,8 @@ public class OptionUIManager : BaseUIManager
     {
         isPressing = false;
         previousDirection = UIInputDirection.None;
+
+        SyncVolumeSliders();
     }
 
     private void Update()
@@ -264,7 +269,7 @@ public class OptionUIManager : BaseUIManager
         UIInputDirection direction = GetStick();
 
 
-        int amount = 0;
+        float amount = 0f;
 
         // スティックを倒した瞬間だけ選択変更
         if (direction != UIInputDirection.None &&
@@ -273,11 +278,11 @@ public class OptionUIManager : BaseUIManager
             switch (direction)
             {
                 case UIInputDirection.Left:
-                    amount = -1;
+                    amount = -1f;
                     break;
 
                 case UIInputDirection.Right:
-                    amount = 1;
+                    amount = 1f;
                     break;
             }
         }
@@ -294,5 +299,14 @@ public class OptionUIManager : BaseUIManager
             // BGMスライダー操作
             BGMSlider.SliderUpdate(amount);
         }
+    }
+
+    // スライダーの同期
+    private void SyncVolumeSliders()
+    {
+        if (AudioManager.Instance == null) return;
+
+        BGMSlider.SetValue(AudioManager.Instance.GetBGM());
+        SESlider.SetValue(AudioManager.Instance.GetSE());
     }
 }
