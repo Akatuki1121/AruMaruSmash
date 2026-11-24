@@ -14,15 +14,17 @@ public static class MatchStats
 {
     public const int MAX_PLAYERS = 4;
 
-    /// <summary>最後に触れられてからこの秒数以内に落ちたら、触れた相手が「落とした」扱い</summary>
-    public const float KILL_CREDIT_SECONDS = 5f;
-
     private const int NONE = -1;
 
     private static readonly int[] s_falls = new int[MAX_PLAYERS];
     private static readonly int[] s_kills = new int[MAX_PLAYERS];
     private static readonly int[] s_last_attacker = new int[MAX_PLAYERS];
-    private static readonly float[] s_last_hit_time = new float[MAX_PLAYERS];
+    private struct NonPlayerHit
+    {
+        public int attacker;
+    }
+    private static readonly System.Collections.Generic.Dictionary<EntityId, NonPlayerHit> s_nonPlayerHits =
+        new();
 
     public struct Entry
     {
@@ -45,8 +47,8 @@ public static class MatchStats
             s_falls[i] = 0;
             s_kills[i] = 0;
             s_last_attacker[i] = NONE;
-            s_last_hit_time[i] = 0f;
         }
+        s_nonPlayerHits.Clear();
     }
 
     /// <summary>attacker が victim にぶつかって飛ばした（落下時の撃墜判定に使う）</summary>
@@ -57,7 +59,39 @@ public static class MatchStats
             return;
         }
         s_last_attacker[victim] = attacker;
-        s_last_hit_time[victim] = Time.time;
+    }
+
+    public static void RegisterNonPlayerHit(int attacker, GameObject victim)
+    {
+        if (!IsValid(attacker) || victim == null)
+        {
+            return;
+        }
+
+        s_nonPlayerHits[victim.GetEntityId()] = new NonPlayerHit
+        {
+            attacker = attacker
+        };
+    }
+
+    public static void RegisterNonPlayerFall(GameObject victim)
+    {
+        if (victim == null)
+        {
+            return;
+        }
+
+        EntityId victimId = victim.GetEntityId();
+        if (!s_nonPlayerHits.TryGetValue(victimId, out NonPlayerHit hit))
+        {
+            return;
+        }
+
+        s_nonPlayerHits.Remove(victimId);
+        if (IsValid(hit.attacker))
+        {
+            s_kills[hit.attacker]++;
+        }
     }
 
     /// <summary>victim がステージ外に落ちた</summary>
@@ -70,7 +104,7 @@ public static class MatchStats
         s_falls[victim]++;
 
         int attacker = s_last_attacker[victim];
-        if (IsValid(attacker) && Time.time - s_last_hit_time[victim] <= KILL_CREDIT_SECONDS)
+        if (IsValid(attacker))
         {
             s_kills[attacker]++;
         }
@@ -89,9 +123,9 @@ public static class MatchStats
     /// <summary>
     /// 参加者の順位表を返す（スコア降順、同点は番号順）。rank は同スコアなら同じ値
     /// </summary>
-    public static List<Entry> Evaluate(IEnumerable<int> participants)
+    public static System.Collections.Generic.List<Entry> Evaluate(System.Collections.Generic.IEnumerable<int> participants)
     {
-        List<Entry> list = new List<Entry>();
+        System.Collections.Generic.List<Entry> list = new();
         foreach (int p in participants)
         {
             if (!IsValid(p))
@@ -131,7 +165,7 @@ public static class MatchStats
     }
 
     /// <summary>1位が複数なら引き分け</summary>
-    public static bool IsDraw(List<Entry> ranking)
+    public static bool IsDraw(System.Collections.Generic.List<Entry> ranking)
     {
         int top = 0;
         foreach (Entry e in ranking)

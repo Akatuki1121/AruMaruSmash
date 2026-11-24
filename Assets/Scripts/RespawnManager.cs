@@ -24,6 +24,7 @@ public class RespawnManager: MonoBehaviour
     private const string GROUND_TAG = "Ground";
     private const float GROUND_RAY_HEIGHT = 50f;       // 復活地点より上から撃つ
     private const float GROUND_RAY_DISTANCE = 200f;    // 復活地点より下へ探す距離
+    private readonly RaycastHit[] groundHitBuffer = new RaycastHit[64];
     // 出現の開始位置を、球体の上端が床の面より少し下になるようにする余白
     private const float EMERGE_START_MARGIN = 0.05f;
 
@@ -46,24 +47,29 @@ public class RespawnManager: MonoBehaviour
     // プレイヤーが場外に行ったら死亡させる
     private void DeathPlayer(Collider collider)
     {
-        if (collider.gameObject.tag == "Player")
+        TopDownPlayerMove playerScript = collider.GetComponentInParent<TopDownPlayerMove>();
+        if (playerScript == null || playerScript.joyconIndex < 0)
         {
-            // 床の下からせり上がっている間は、場外の判定を受けない
-            if (collider.TryGetComponent(out PlayerRespawnEffect effect) && effect.IsEmerging) return;
-
-            TopDownPlayerMove playerScript = collider.GetComponent<TopDownPlayerMove>();
-
-            // indexを読み取っておく
-            int id = playerScript.joyconIndex;
-
-            // 同じプレイヤーのコライダーが複数回トリガーに入っても、死亡は1回だけ数える
-            if (!respawning.Add(id)) return;
-
-            Debug.Log($"プレイヤー {id} が死んだあ");
-            MatchStats.RegisterFall(id);
-            Destroy(collider.gameObject);
-            StartCoroutine(RespawnAfterDelay(id));
+            GameObject fallingObject = collider.attachedRigidbody != null
+                ? collider.attachedRigidbody.gameObject
+                : collider.gameObject;
+            MatchStats.RegisterNonPlayerFall(fallingObject);
+            return;
         }
+
+        // 床の下からせり上がっている間は、場外の判定を受けない
+        if (collider.TryGetComponent(out PlayerRespawnEffect effect) && effect.IsEmerging) return;
+
+        // indexを読み取っておく
+        int id = playerScript.joyconIndex;
+
+        // 同じプレイヤーのコライダーが複数回トリガーに入っても、死亡は1回だけ数える
+        if (!respawning.Add(id)) return;
+
+        Debug.Log($"プレイヤー {id} が死んだあ");
+        MatchStats.RegisterFall(id);
+        Destroy(collider.gameObject);
+        StartCoroutine(RespawnAfterDelay(id));
     }
 
     // 落下から respawnDelay 秒後に、プレイヤーごとの地点で復活させる
@@ -114,13 +120,14 @@ public class RespawnManager: MonoBehaviour
     private Vector3 FindGroundPoint(Vector3 position)
     {
         Vector3 origin = position + (Vector3.up * GROUND_RAY_HEIGHT);
-        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, GROUND_RAY_HEIGHT + GROUND_RAY_DISTANCE, ~0, QueryTriggerInteraction.Ignore);
+        int hitCount = Physics.RaycastNonAlloc(origin, Vector3.down, groundHitBuffer, GROUND_RAY_HEIGHT + GROUND_RAY_DISTANCE, ~0, QueryTriggerInteraction.Ignore);
 
         float nearest = float.MaxValue;
         Vector3 groundPoint = position;
         bool found = false;
-        foreach (RaycastHit hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            RaycastHit hit = groundHitBuffer[i];
             // RespawnPoint より上にある床ではなく、地点の真下にある最も近い床を選ぶ
             if (!hit.collider.CompareTag(GROUND_TAG) || hit.point.y > position.y || hit.distance >= nearest) continue;
 
@@ -139,8 +146,7 @@ public class RespawnManager: MonoBehaviour
     // プレハブのSphereColliderから、ワールドでの球体の半径を求める
     private static float GetPlayerRadius(GameObject playerPrefab)
     {
-        SphereCollider sphere = playerPrefab.GetComponent<SphereCollider>();
-        if (sphere == null) return 0.5f;
+        if (!playerPrefab.TryGetComponent(out SphereCollider sphere)) return 0.5f;
 
         Vector3 scale = playerPrefab.transform.lossyScale;
         float maxScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
