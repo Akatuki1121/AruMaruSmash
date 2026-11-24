@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       period_end_date:
-        description: '対象週の締め日（火曜の日付、JST）。空なら直近の火曜。作り直し用（例: 2026-11-24）'
+        description: '作り直し用: その火曜の週分を作り直すときに日付を指定（例: 2026-11-24）。空なら前回実行から今回実行まで'
         required: false
         type: string
         default: ''
@@ -85,43 +85,62 @@ jobs:
               'yano5555':    { studentId: '2427075', name: '矢野朱華' },
             };
 
-            // 対象週: 直近の火曜11:00 JSTを締めとして、そこから遡って7日間
-            // 実行時刻から計算すると、定期実行が遅れた分だけ対象週もずれるため、
-            // 締めは「火曜の日付」で固定する（手動実行の inputs.period_end_date があればその日付を使う）
-            const PERIOD_END_HOUR_JST = 11; // 締め時刻(JST)。変える場合はここだけ直す
+            // 対象期間: 前回「下書き生成まで行った実行」から今回の実行まで
+            // 実行時刻から7日遡る方式や、火曜の固定時刻で締める方式だと、実行間隔のずれがそのまま漏れや重なりになるため、
+            // Actionsの実行履歴から前回の生成実行を探し、その開始時刻を期間の開始にする
             const DAY_MS = 24 * 60 * 60 * 1000;
             const JST_MS = 9 * 60 * 60 * 1000;
-
-            // JSTの壁時計をUTCフィールドで表した値（日付・曜日の判定用）
             const jstWall = (date) => new Date(date.getTime() + JST_MS);
             const fmtJstDate = (wall) => wall.toISOString().slice(0, 10);
-
-            // 締め日（火曜）のJST日付を決める
-            let endDateJst;
-            const inputDate = (context.payload.inputs && context.payload.inputs.period_end_date || '').trim();
-            if (inputDate) {
-              if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
-                core.setFailed(`period_end_date の形式が不正です: ${inputDate}（YYYY-MM-DDで指定してください）`);
-                return;
-              }
-              endDateJst = inputDate;
-            } else {
-              const wall = jstWall(new Date());
-              const daysSinceTuesday = (wall.getUTCDay() + 5) % 7; // 火曜=0
-              endDateJst = fmtJstDate(new Date(wall.getTime() - daysSinceTuesday * DAY_MS));
-            }
-
-            // 締め日 11:00 JST の実時刻と、7日前の開始時刻
-            const until = new Date(Date.parse(`${endDateJst}T00:00:00.000Z`) + PERIOD_END_HOUR_JST * 60 * 60 * 1000 - JST_MS);
-            const since = new Date(until.getTime() - 7 * DAY_MS);
-            const now = until; // 以後の「今週」判定は締め時刻を基準にする
-            const sinceISO = since.toISOString();
-            const untilISO = until.toISOString();
-
             function fmtDate(d) {
               // 表示はJSTの日付で出す
               return fmtJstDate(jstWall(d));
             }
+
+            let now = new Date();
+            let since = null;
+
+            const inputDate = (context.payload.inputs && context.payload.inputs.period_end_date || '').trim();
+            if (inputDate) {
+              // 作り直し用: 指定した火曜の14:05 JSTを締めとして、そこから遡って7日間を対象にする
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
+                core.setFailed(`period_end_date の形式が不正です: ${inputDate}（YYYY-MM-DDで指定してください）`);
+                return;
+              }
+              now = new Date(Date.parse(`${inputDate}T00:00:00.000Z`) + (14 * 60 + 5) * 60 * 1000 - JST_MS);
+              since = new Date(now.getTime() - 7 * DAY_MS);
+            } else {
+              // 前回の生成実行を探す（mainでの成功実行のうち、生成ステップが成功したもの）
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'weekly-report.yml',
+                status: 'success',
+                per_page: 30,
+              });
+              for (const r of runs.data.workflow_runs) {
+                if (r.id === context.runId) continue;
+                if (r.head_branch !== 'main') continue;
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: r.id,
+                });
+                const genStep = jobs.data.jobs
+                  .flatMap((job) => job.steps || [])
+                  .find((step) => step.name === 'Generate weekly report drafts');
+                if (genStep && genStep.conclusion === 'success') {
+                  since = new Date(r.created_at);
+                  break;
+                }
+              }
+              if (!since) {
+                // 前回が見つからない場合（初回など）は、今回から7日遡る
+                since = new Date(now.getTime() - 7 * DAY_MS);
+              }
+            }
+            const sinceISO = since.toISOString();
+            const untilISO = now.toISOString();
 
             // 全メンバー（memberInfo のキー = GitHub ログイン名）
             const logins = Object.keys(memberInfo);
