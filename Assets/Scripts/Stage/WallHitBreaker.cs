@@ -6,7 +6,7 @@ using UnityEngine;
 /// 衝突は PlayerCollisionHandler が RegisterHit を呼んで通知する。
 /// </summary>
 [RequireComponent(typeof(BreakableWall))]
-public class WallHitBreaker : MonoBehaviour
+public class WallHitBreaker : MonoBehaviour, IWallBreakCondition
 {
     // まだ一度もぶつかっていない状態を表す値(クールダウン判定が必ず通る十分過去の時刻)
     private const float NoHitTime = -999f;
@@ -26,7 +26,7 @@ public class WallHitBreaker : MonoBehaviour
 
     private void Awake()
     {
-        wall = GetComponent<BreakableWall>();
+        TryGetComponent(out wall);
     }
 
     // プレイヤーがぶつかったときに PlayerCollisionHandler から呼ばれる
@@ -47,7 +47,7 @@ public class WallHitBreaker : MonoBehaviour
     }
 
     // 壁の復活時に BreakableWall.Revive から呼ばれる。回数とクールダウンを初期状態に戻す
-    public void ResetHits()
+    public void ResetForRevive()
     {
         hitCount = 0;
         lastHitTime = NoHitTime;

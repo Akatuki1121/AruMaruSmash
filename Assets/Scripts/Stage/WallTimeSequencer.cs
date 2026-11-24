@@ -35,10 +35,10 @@ public class WallTimeSequencer : MonoBehaviour
 
         Vector3 origin = center != null ? center.position : Vector3.zero;
 
-        List<KeyValuePair<float, WallTimeBreaker>> ranked = new List<KeyValuePair<float, WallTimeBreaker>>();
+        List<KeyValuePair<float, WallTimeBreaker>> ranked = new();
         foreach (WallTimeBreaker breaker in breakers)
         {
-            ranked.Add(new KeyValuePair<float, WallTimeBreaker>(GetDistance(breaker, origin), breaker));
+            ranked.Add(new(GetDistance(breaker, origin), breaker));
         }
 
         ranked.Sort((a, b) => outerFirst ? b.Key.CompareTo(a.Key) : a.Key.CompareTo(b.Key));

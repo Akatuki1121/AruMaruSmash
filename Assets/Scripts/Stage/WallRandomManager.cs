@@ -40,9 +40,9 @@ public class WallRandomManager : MonoBehaviour
     [Tooltip("壊れてから復活するまでの時間の最大値(秒)")]
     [Min(0.1f)] public float maxReviveDelay = 25f;
 
-    private readonly List<BreakableWall> walls = new List<BreakableWall>();
-    private readonly Dictionary<BreakableWall, float> reviveTimes = new Dictionary<BreakableWall, float>();
-    private readonly List<BreakableWall> candidates = new List<BreakableWall>();
+    private readonly List<BreakableWall> walls = new();
+    private readonly Dictionary<BreakableWall, float> reviveTimes = new();
+    private readonly List<BreakableWall> candidates = new();
 
     private float nextBreakTime;
     private BreakableWall lastRandomBroken;

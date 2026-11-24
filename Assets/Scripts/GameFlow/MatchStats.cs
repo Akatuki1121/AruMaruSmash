@@ -24,7 +24,7 @@ public static class MatchStats
         public int attacker;
     }
     private static readonly System.Collections.Generic.Dictionary<EntityId, NonPlayerHit> s_nonPlayerHits =
-        new System.Collections.Generic.Dictionary<EntityId, NonPlayerHit>();
+        new();
 
     public struct Entry
     {
@@ -125,7 +125,7 @@ public static class MatchStats
     /// </summary>
     public static System.Collections.Generic.List<Entry> Evaluate(System.Collections.Generic.IEnumerable<int> participants)
     {
-        System.Collections.Generic.List<Entry> list = new System.Collections.Generic.List<Entry>();
+        System.Collections.Generic.List<Entry> list = new();
         foreach (int p in participants)
         {
             if (!IsValid(p))

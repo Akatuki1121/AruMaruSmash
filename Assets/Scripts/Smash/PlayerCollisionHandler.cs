@@ -101,8 +101,7 @@ public class PlayerCollisionHandler : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        PlayerCollisionHandler other = collision.collider.GetComponent<PlayerCollisionHandler>();
-        if (other == null)
+        if (!collision.collider.TryGetComponent(out PlayerCollisionHandler other))
         {
             // 壁・ギミック等、プレイヤーでない相手：壁なら強く跳ね返し、上向き速度も抑える
             if (collision.rigidbody != null && !collision.rigidbody.isKinematic)
@@ -144,8 +143,7 @@ public class PlayerCollisionHandler : MonoBehaviour
     // ぶつかった相手が回数で壊れる壁なら、ヒットを通知する
     private void NotifyWallHitBreaker(Collision collision)
     {
-        WallHitBreaker hitBreaker = collision.collider.GetComponent<WallHitBreaker>();
-        if (hitBreaker != null && hitBreaker.isActiveAndEnabled)
+        if (collision.collider.TryGetComponent(out WallHitBreaker hitBreaker) && hitBreaker.isActiveAndEnabled)
         {
             hitBreaker.RegisterHit(collision.relativeVelocity.magnitude);
         }
@@ -265,8 +263,8 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         // 法線方向の速度変化を両者に反対向きで与え、反発倍率をかける（接線方向はそのまま）
         float bounceMultiplier = a.BounceForceMultiplier;
-        Vector3 winnerResult = winnerVel + (normal * (loserN - winnerN) * bounceMultiplier);
-        Vector3 loserResult = loserVel + (normal * (winnerN - loserN) * bounceMultiplier);
+        Vector3 winnerResult = winnerVel + (normal * ((loserN - winnerN) * bounceMultiplier));
+        Vector3 loserResult = loserVel + (normal * ((winnerN - loserN) * bounceMultiplier));
 
         winner.knockbackController.SetCollisionVelocity(winnerResult);
         loser.knockbackController.SetCollisionVelocity(loserResult);
