@@ -85,9 +85,12 @@ jobs:
               'yano5555':    { studentId: '2427075', name: '矢野朱華' },
             };
 
-            // 対象期間: 前回「下書き生成まで行った実行」から今回の実行まで
-            // 実行時刻から7日遡る方式や、火曜の固定時刻で締める方式だと、実行間隔のずれがそのまま漏れや重なりになるため、
-            // Actionsの実行履歴から前回の生成実行を探し、その開始時刻を期間の開始にする
+            // 対象期間の決め方
+            // ・通常の実行: 前回の生成実行の時刻から今回の実行まで。ただし作り直し実行（火曜以外の手動実行）は
+            //   起点に使わず、その前の生成実行まで遡る（作り直しは元の実行の集め直しであり、区切りの時刻は元の実行のものを使う）
+            // ・作り直し（締め日を指定した手動実行）: 起点は、指定した火曜より前の直近の火曜の生成実行が
+            //   下書きに含めた終わり（その実行時刻）。終わりは、指定した火曜以降にbotが実行されたタイミング
+            //   （その週の実行の時刻。無ければ指定した火曜の14:05 JST）
             const DAY_MS = 24 * 60 * 60 * 1000;
             const JST_MS = 9 * 60 * 60 * 1000;
             const jstWall = (date) => new Date(date.getTime() + JST_MS);
@@ -96,21 +99,10 @@ jobs:
               // 表示はJSTの日付で出す
               return fmtJstDate(jstWall(d));
             }
+            const isTuesdayJst = (date) => jstWall(date).getUTCDay() === 2;
 
-            let now = new Date();
-            let since = null;
-
-            const inputDate = (context.payload.inputs && context.payload.inputs.period_end_date || '').trim();
-            if (inputDate) {
-              // 作り直し用: 指定した火曜の14:05 JSTを締めとして、そこから遡って7日間を対象にする
-              if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
-                core.setFailed(`period_end_date の形式が不正です: ${inputDate}（YYYY-MM-DDで指定してください）`);
-                return;
-              }
-              now = new Date(Date.parse(`${inputDate}T00:00:00.000Z`) + (14 * 60 + 5) * 60 * 1000 - JST_MS);
-              since = new Date(now.getTime() - 7 * DAY_MS);
-            } else {
-              // 前回の生成実行を探す（mainでの成功実行のうち、生成ステップが成功したもの）
+            // 下書き生成まで行った実行（mainでの成功実行のうち、生成ステップが成功したもの）を新しい順に返す
+            const listGeneratingRuns = async () => {
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -118,6 +110,7 @@ jobs:
                 status: 'success',
                 per_page: 30,
               });
+              const result = [];
               for (const r of runs.data.workflow_runs) {
                 if (r.id === context.runId) continue;
                 if (r.head_branch !== 'main') continue;
@@ -129,15 +122,31 @@ jobs:
                 const genStep = jobs.data.jobs
                   .flatMap((job) => job.steps || [])
                   .find((step) => step.name === 'Generate weekly report drafts');
-                if (genStep && genStep.conclusion === 'success') {
-                  since = new Date(r.created_at);
-                  break;
-                }
+                if (!genStep || genStep.conclusion !== 'success') continue;
+                result.push({ created: new Date(r.created_at), event: r.event });
               }
-              if (!since) {
-                // 前回が見つからない場合（初回など）は、今回から7日遡る
-                since = new Date(now.getTime() - 7 * DAY_MS);
+              return result;
+            };
+
+            let now = new Date();
+            let since = null;
+
+            const inputDate = (context.payload.inputs && context.payload.inputs.period_end_date || '').trim();
+            if (inputDate) {
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
+                core.setFailed(`period_end_date の形式が不正です: ${inputDate}（YYYY-MM-DDで指定してください）`);
+                return;
               }
+              const dayStart = new Date(Date.parse(`${inputDate}T00:00:00.000Z`) - JST_MS); // 指定した火曜 00:00 JST
+              const runs = await listGeneratingRuns();
+              const botRun = runs.find((r) => r.created >= dayStart);
+              now = botRun ? botRun.created : new Date(dayStart.getTime() + (14 * 60 + 5) * 60 * 1000);
+              const prevTue = runs.find((r) => r.created < dayStart && isTuesdayJst(r.created));
+              since = prevTue ? prevTue.created : new Date(now.getTime() - 7 * DAY_MS);
+            } else {
+              const runs = await listGeneratingRuns();
+              const anchor = runs.find((r) => !(r.event === 'workflow_dispatch' && !isTuesdayJst(r.created)));
+              since = anchor ? anchor.created : new Date(now.getTime() - 7 * DAY_MS);
             }
             const sinceISO = since.toISOString();
             const untilISO = now.toISOString();
