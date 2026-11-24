@@ -30,7 +30,7 @@ public class ChargeDashController : MonoBehaviour
     // 方向ベクトルとみなす最小の大きさ
     private const float DIRECTION_EPSILON = 0.0001f;
     // 入力があったとみなす最小の大きさ
-    private const float AIM_DEADZONE = 0.1f;
+    private const float AIM_DEADZONE = 0.15f;
     // 最大チャージとみなす割合（浮動小数点の誤差対策）
     private const float MAX_CHARGE_RATIO = 0.999f;
     // 最大チャージ時間・ダッシュ持続時間の下限（0除算回避）
