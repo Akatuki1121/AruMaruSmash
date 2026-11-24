@@ -105,6 +105,10 @@ public class PlayerCollisionHandler : MonoBehaviour
         if (other == null)
         {
             // 壁・ギミック等、プレイヤーでない相手：壁なら強く跳ね返し、上向き速度も抑える
+            if (collision.rigidbody != null && !collision.rigidbody.isKinematic)
+            {
+                MatchStats.RegisterNonPlayerHit(PlayerId, collision.rigidbody.gameObject);
+            }
             NotifyWallHitBreaker(collision);
             BounceOffWall(collision);
             SuppressUpwardVelocityAgainstWall(collision);
@@ -116,6 +120,15 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         // 片方の処理だけで両者分を解決する（自分のEntityIdが小さい方が代表して処理）
         if (GetEntityId() > other.GetEntityId()) return;
+
+        if (PlayerId >= 0 && other.PlayerId < 0)
+        {
+            MatchStats.RegisterNonPlayerHit(PlayerId, other.gameObject);
+        }
+        else if (PlayerId < 0 && other.PlayerId >= 0)
+        {
+            MatchStats.RegisterNonPlayerHit(other.PlayerId, gameObject);
+        }
 
         Vector3 contactNormal = collision.GetContact(0).normal; // otherからthisへ向かう方向
 
