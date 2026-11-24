@@ -3,6 +3,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public interface IWallBreakCondition
+{
+    void ResetForRevive();
+}
+
 /// <summary>
 /// 壊れる壁の本体。壊したい壁の GameObject に付ける。
 /// 壊れる条件は一緒に付けるコンポーネントで決まる。
@@ -14,7 +19,7 @@ using UnityEngine;
 public class BreakableWall : MonoBehaviour
 {
     [Tooltip("進行するほど近づく色(壁の色が段階的に変わる)")]
-    public Color crackedColor = new Color(0.35f, 0.3f, 0.3f, 1f);
+    public Color crackedColor = new(0.35f, 0.3f, 0.3f, 1f);
 
     // 壊れたとき／復活したときに通知する。管理側(WallRandomManager など)が購読する。
     // 壊れた壁は SetActive(false) で見つけにくくなるため、管理側は壁の一覧を事前に保持しておく。
@@ -42,38 +47,43 @@ public class BreakableWall : MonoBehaviour
         public Color OriginalColor;
     }
 
-    private readonly List<WallColorTarget> colorTargets = new List<WallColorTarget>();
+    private readonly List<WallColorTarget> colorTargets = new();
     private MaterialPropertyBlock block;
     private float currentProgress;
 
     private void Awake()
     {
-        block = new MaterialPropertyBlock();
+        block = new();
 
         // 壁の子階層にある全 Renderer と、各 Renderer の全マテリアルスロットを対象にする。
         Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
 
         foreach (Renderer targetRenderer in renderers)
         {
-            if (targetRenderer == null) continue;
+            CacheColorTargets(targetRenderer);
+        }
+    }
 
-            Material[] materials = targetRenderer.sharedMaterials;
-            for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+    private void CacheColorTargets(Renderer targetRenderer)
+    {
+        if (targetRenderer == null) return;
+
+        Material[] materials = targetRenderer.sharedMaterials;
+        for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+        {
+            Material material = materials[materialIndex];
+            if (material == null) continue;
+
+            int colorPropertyId = FindColorProperty(material);
+            if (colorPropertyId == -1) continue;
+
+            colorTargets.Add(new()
             {
-                Material material = materials[materialIndex];
-                if (material == null) continue;
-
-                int colorPropertyId = FindColorProperty(material);
-                if (colorPropertyId == -1) continue;
-
-                colorTargets.Add(new WallColorTarget
-                {
-                    Renderer = targetRenderer,
-                    MaterialIndex = materialIndex,
-                    ColorPropertyId = colorPropertyId,
-                    OriginalColor = material.GetColor(colorPropertyId)
-                });
-            }
+                Renderer = targetRenderer,
+                MaterialIndex = materialIndex,
+                ColorPropertyId = colorPropertyId,
+                OriginalColor = material.GetColor(colorPropertyId)
+            });
         }
     }
 
@@ -125,16 +135,13 @@ public class BreakableWall : MonoBehaviour
 
     private void ResetBreakers()
     {
-        WallHitBreaker hitBreaker = GetComponent<WallHitBreaker>();
-        if (hitBreaker != null)
+        MonoBehaviour[] components = GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour component in components)
         {
-            hitBreaker.ResetHits();
-        }
-
-        WallTimeBreaker timeBreaker = GetComponent<WallTimeBreaker>();
-        if (timeBreaker != null)
-        {
-            timeBreaker.ResetTimer();
+            if (component is IWallBreakCondition condition)
+            {
+                condition.ResetForRevive();
+            }
         }
     }
 

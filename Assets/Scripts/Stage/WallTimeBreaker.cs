@@ -6,7 +6,7 @@ using UnityEngine;
 /// 四方の壁で timeToBreak をずらすと、順番に壁がなくなる。
 /// </summary>
 [RequireComponent(typeof(BreakableWall))]
-public class WallTimeBreaker : MonoBehaviour
+public class WallTimeBreaker : MonoBehaviour, IWallBreakCondition
 {
     [Tooltip("壁が有効になってから消えるまでの秒数。四方の壁で値をずらすと順番に消える")]
     [Min(0.1f)] public float timeToBreak = 30f;
@@ -16,7 +16,7 @@ public class WallTimeBreaker : MonoBehaviour
 
     private void Awake()
     {
-        wall = GetComponent<BreakableWall>();
+        TryGetComponent(out wall);
     }
 
     private void OnEnable()
@@ -36,7 +36,7 @@ public class WallTimeBreaker : MonoBehaviour
     }
 
     // 壁の復活時に BreakableWall.Revive から呼ばれる。開始時刻を取り直してタイマーを頭から数え直す
-    public void ResetTimer()
+    public void ResetForRevive()
     {
         activatedTime = Time.time;
     }
