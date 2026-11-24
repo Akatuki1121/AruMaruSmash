@@ -3,7 +3,13 @@ on:
   schedule:
     # 毎週火曜 14:00 JST = 火曜 05:00 UTC（毎時ちょうどは混雑するため05分にずらす）
     - cron: '5 5 * * 2'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      period_end_date:
+        description: '作り直し用: その火曜の週分を作り直すときに日付を指定（例: 2026-11-24）。空なら前回実行から今回実行まで'
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: weekly-report
@@ -29,6 +35,15 @@ jobs:
             const jstDate = (iso) =>
               new Date(Date.parse(iso) + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
             const today = jstDate(new Date().toISOString());
+
+            // 自動実行が火曜(JST)のうちに始まらなかった場合は、その週の分として送らずスキップする
+            // （GitHubの定期実行が大幅に遅れ、水曜深夜などに届く事故を防ぐ。2026-11-24の回は約10時間半遅れで水曜00:36開始だった）
+            const jstWeekday = new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCDay(); // 0=日, 2=火
+            if (jstWeekday !== 2) {
+              core.notice('自動実行の開始が火曜(JST)ではないため、この回はスキップします。');
+              core.setOutput('skip', 'true');
+              return;
+            }
 
             const { data } = await github.rest.actions.listWorkflowRuns({
               owner: context.repo.owner,
@@ -70,15 +85,62 @@ jobs:
               'yano5555':    { studentId: '2427075', name: '矢野朱華' },
             };
 
-            // 対象週: 直近の火曜11:00 JSTから遡って7日間
-            const now = new Date();
-            const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            // 対象期間: 前回「下書き生成まで行った実行」から今回の実行まで
+            // 実行時刻から7日遡る方式や、火曜の固定時刻で締める方式だと、実行間隔のずれがそのまま漏れや重なりになるため、
+            // Actionsの実行履歴から前回の生成実行を探し、その開始時刻を期間の開始にする
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            const JST_MS = 9 * 60 * 60 * 1000;
+            const jstWall = (date) => new Date(date.getTime() + JST_MS);
+            const fmtJstDate = (wall) => wall.toISOString().slice(0, 10);
+            function fmtDate(d) {
+              // 表示はJSTの日付で出す
+              return fmtJstDate(jstWall(d));
+            }
+
+            let now = new Date();
+            let since = null;
+
+            const inputDate = (context.payload.inputs && context.payload.inputs.period_end_date || '').trim();
+            if (inputDate) {
+              // 作り直し用: 指定した火曜の14:05 JSTを締めとして、そこから遡って7日間を対象にする
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(inputDate)) {
+                core.setFailed(`period_end_date の形式が不正です: ${inputDate}（YYYY-MM-DDで指定してください）`);
+                return;
+              }
+              now = new Date(Date.parse(`${inputDate}T00:00:00.000Z`) + (14 * 60 + 5) * 60 * 1000 - JST_MS);
+              since = new Date(now.getTime() - 7 * DAY_MS);
+            } else {
+              // 前回の生成実行を探す（mainでの成功実行のうち、生成ステップが成功したもの）
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'weekly-report.yml',
+                status: 'success',
+                per_page: 30,
+              });
+              for (const r of runs.data.workflow_runs) {
+                if (r.id === context.runId) continue;
+                if (r.head_branch !== 'main') continue;
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: r.id,
+                });
+                const genStep = jobs.data.jobs
+                  .flatMap((job) => job.steps || [])
+                  .find((step) => step.name === 'Generate weekly report drafts');
+                if (genStep && genStep.conclusion === 'success') {
+                  since = new Date(r.created_at);
+                  break;
+                }
+              }
+              if (!since) {
+                // 前回が見つからない場合（初回など）は、今回から7日遡る
+                since = new Date(now.getTime() - 7 * DAY_MS);
+              }
+            }
             const sinceISO = since.toISOString();
             const untilISO = now.toISOString();
-
-            function fmtDate(d) {
-              return d.toISOString().slice(0, 10);
-            }
 
             // 全メンバー（memberInfo のキー = GitHub ログイン名）
             const logins = Object.keys(memberInfo);
