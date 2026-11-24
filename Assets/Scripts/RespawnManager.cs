@@ -46,24 +46,29 @@ public class RespawnManager: MonoBehaviour
     // プレイヤーが場外に行ったら死亡させる
     private void DeathPlayer(Collider collider)
     {
-        if (collider.gameObject.tag == "Player")
+        TopDownPlayerMove playerScript = collider.GetComponentInParent<TopDownPlayerMove>();
+        if (playerScript == null || playerScript.joyconIndex < 0)
         {
-            // 床の下からせり上がっている間は、場外の判定を受けない
-            if (collider.TryGetComponent(out PlayerRespawnEffect effect) && effect.IsEmerging) return;
-
-            TopDownPlayerMove playerScript = collider.GetComponent<TopDownPlayerMove>();
-
-            // indexを読み取っておく
-            int id = playerScript.joyconIndex;
-
-            // 同じプレイヤーのコライダーが複数回トリガーに入っても、死亡は1回だけ数える
-            if (!respawning.Add(id)) return;
-
-            Debug.Log($"プレイヤー {id} が死んだあ");
-            MatchStats.RegisterFall(id);
-            Destroy(collider.gameObject);
-            StartCoroutine(RespawnAfterDelay(id));
+            GameObject fallingObject = collider.attachedRigidbody != null
+                ? collider.attachedRigidbody.gameObject
+                : collider.gameObject;
+            MatchStats.RegisterNonPlayerFall(fallingObject);
+            return;
         }
+
+        // 床の下からせり上がっている間は、場外の判定を受けない
+        if (collider.TryGetComponent(out PlayerRespawnEffect effect) && effect.IsEmerging) return;
+
+        // indexを読み取っておく
+        int id = playerScript.joyconIndex;
+
+        // 同じプレイヤーのコライダーが複数回トリガーに入っても、死亡は1回だけ数える
+        if (!respawning.Add(id)) return;
+
+        Debug.Log($"プレイヤー {id} が死んだあ");
+        MatchStats.RegisterFall(id);
+        Destroy(collider.gameObject);
+        StartCoroutine(RespawnAfterDelay(id));
     }
 
     // 落下から respawnDelay 秒後に、プレイヤーごとの地点で復活させる
