@@ -20,6 +20,10 @@ public class TopDownPlayerMove : MonoBehaviour
     [Tooltip("入力を離した/逆向きに入力したときの減速量（速度/秒）。上げるほど早く止まる（慣性が弱くなる）。下げるほど滑る")]
     public float groundDeceleration = 6f;
 
+    [Tooltip("この角度以上に進行方向を変える入力があったとき、速度を落としてから方向転換する")]
+    [Range(0f, 180f)]
+    public float sharpTurnAngle = 90f;
+
     [Header("空中制御")]
     [Tooltip("空中（接地していない間）の入力の効き具合。0=空中では入力で動けない（慣性のまま飛ぶ）/ 1=地上と同じ。" +
              "吹っ飛び中は別途ロックされるため、ここは歩いて落ちたときなどの通常移動中の空中に適用される。")]
@@ -46,6 +50,11 @@ public class TopDownPlayerMove : MonoBehaviour
 
     [Header("Joy-Con設定")]
     public int joyconIndex = 0; // 使用するJoy-Conのインデックス（0または1）
+    [Tooltip("手前に傾けた基準角度。この姿勢を入力0として扱う。左Joy-Conは加速度軸に合わせて符号を反転する")]
+    public float tiltZeroAngle = 30f;
+    private float SignedTiltZeroAngle => joycon != null && joycon.isLeft
+        ? -Mathf.Abs(tiltZeroAngle)
+        : Mathf.Abs(tiltZeroAngle);
     private Joycon joycon; // 接続されているJoy-Con本体への参照
     private string joyconDeviceId; // 最初に取得した Joycon の個体識別子。再接続時に同じ個体を取り直すため
     public Joycon ActiveJoycon => joycon;   // ChargeDashControllerがボタン入力を読むために公開
@@ -146,12 +155,13 @@ public class TopDownPlayerMove : MonoBehaviour
 
         GetMoveDirection();
 
-        bool hasInput = GetTiltX() > 0.2f || GetTiltX() < -0.2f || GetTiltY() > 0.2f || GetTiltY() < -0.2f;
+        bool hasInput = tiltAmount > 0f;
 
         if (hasInput)
         {
-            // 前回の移動方向と現在の移動方向が逆向きの場合、減速する
-            if (currentSpeed > 0.1f && Vector3.Dot(oldDir, moveDirection) < -0.1f)
+            // 急な方向転換では、速度を落としてから新しい方向へ切り替える
+            if (currentSpeed > 0.1f && oldDir.sqrMagnitude > 0f &&
+                Vector3.Angle(oldDir, moveDirection) >= sharpTurnAngle)
             {
                 currentSpeed -= BrakeRate * Time.deltaTime;
                 currentSpeed = Mathf.Max(currentSpeed, 0f);
@@ -208,13 +218,12 @@ public class TopDownPlayerMove : MonoBehaviour
 
         const float deadZone = 0.1f;
 
-        // 傾きをそのまま方向成分として使う（360度）
-        float moveX = JoyAccel.x;
-        float moveZ = -JoyAccel.y;
-
+        // X/YだけでなくZ軸も使って傾き角を求め、Joy-Conを裏返した場合も角度を判定する
+        float sideAngle = Mathf.Atan2(JoyAccel.x, JoyAccel.z) * Mathf.Rad2Deg;
+        float forwardAngle = Mathf.Atan2(-JoyAccel.y, JoyAccel.z) * Mathf.Rad2Deg;
+        float moveX = Mathf.DeltaAngle(0f, sideAngle) / 90f;
+        float moveZ = Mathf.DeltaAngle(SignedTiltZeroAngle, forwardAngle) / 90f;
         Vector3 inputVector = new(moveX, 0f, moveZ);
-
-        // デッドゾーン処理：小さい傾きは入力なしとして扱う
         float inputMagnitude = inputVector.magnitude;
         if (inputMagnitude <= deadZone)
         {
@@ -223,14 +232,9 @@ public class TopDownPlayerMove : MonoBehaviour
             return;
         }
 
-        // デッドゾーンを越えた分だけを0〜1へ正規化する
-        float usableMagnitude = Mathf.Clamp01(
-            (inputMagnitude - deadZone) / (1f - deadZone)
-        );
-
-        // 方向は360度、速度倍率は傾き量で決める
+        // 角度差は±180度で扱うため、90度を超えて裏返す方向も判定できる
         moveDirection = inputVector.normalized;
-        tiltAmount = usableMagnitude;
+        tiltAmount = Mathf.Clamp01((inputMagnitude - deadZone) / (1f - deadZone));
     }
 
     private void TryAcquireJoyCon()
